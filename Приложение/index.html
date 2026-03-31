@@ -3,38 +3,37 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Моё приложение</title>
+<title>Редактор блоков</title>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
-  html, body { width:100%; font-family:Arial, sans-serif; background:#000; height:100%; }
+  html, body { width:100%; height:100%; font-family:Arial, sans-serif; background:#000; }
   body { display:flex; flex-direction:column; height:100vh; overflow:hidden; }
 
-  .block { position: relative; width:100%; overflow:hidden; margin-bottom:-4px; cursor:pointer; background:#111; }
-
+  .block { position: relative; width:100%; overflow:hidden; margin-bottom:2px; background:#111; cursor:pointer; border:1px solid #222; }
   img.preview-img { width:100%; height:auto; display:block; }
-
   input[type="file"] { display:none; }
 
-  #bodyBlocks { position:absolute; top:0; bottom:0; width:100%; overflow-y:auto; }
+  #bodyBlocks { position:absolute; top:0; bottom:0; width:100%; overflow-y:auto; display:flex; flex-direction:column; }
 
-  .controls {
-    display:flex;
-    justify-content: space-between;
-    background: rgba(0,0,0,0.6);
-    color: #fff;
-    padding:4px 8px;
-    font-size:14px;
+  .controls { display:flex; justify-content: space-between; align-items:center; padding:4px 8px; background: rgba(0,0,0,0.5); color:#fff; font-size:14px; }
+  .add-btn { margin:5px; padding:5px 10px; background:#2196F3; border:none; border-radius:4px; color:#fff; cursor:pointer; }
+
+  /* горизонтальный скрол для под-блоков */
+  .horizontal-scroll {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
   }
 
-  .add-btn {
-    margin:5px;
-    padding:5px 10px;
-    background:#2196F3;
-    border:none;
-    border-radius:4px;
-    color:#fff;
-    cursor:pointer;
+  .horizontal-scroll img {
+    width: 100vw;  /* ширина = экран */
+    height: auto;
+    flex-shrink: 0;
+    scroll-snap-align: start;
   }
+
+  .drag-handle { cursor: move; margin-right:5px; color:#0af; }
 </style>
 </head>
 <body>
@@ -42,13 +41,13 @@
 <!-- HEADER -->
 <div class="block" id="headerBlock">
   <div class="controls">
-    <label>Закрепить: <input type="checkbox" id="headerFix"></label>
+    <label>Закрепить <input type="checkbox" id="headerFix" checked></label>
   </div>
   <img id="headerPreview" class="preview-img" alt="Header Фото">
   <input type="file" id="headerUpload" accept="image/*">
 </div>
 
-<!-- BODY с возможностью добавления блоков -->
+<!-- BODY -->
 <div id="bodyBlocks">
   <div class="controls">
     <button class="add-btn" id="addBodyBlockBtn">Добавить блок</button>
@@ -58,7 +57,7 @@
 <!-- FOOTER -->
 <div class="block" id="footerBlock">
   <div class="controls">
-    <label>Закрепить: <input type="checkbox" id="footerFix"></label>
+    <label>Закрепить <input type="checkbox" id="footerFix" checked></label>
   </div>
   <img id="footerPreview" class="preview-img" alt="Footer Фото">
   <input type="file" id="footerUpload" accept="image/*">
@@ -71,37 +70,37 @@ if('serviceWorker' in navigator){
 
 // Настройка блока
 function setupBlock(block, fileInput, fixCheckbox, pos='') {
-  block.addEventListener('click', (e)=>{
-    if(e.target.tagName==='INPUT') return; // не открывать файл при клике по чекбоксу
+  block.addEventListener('click',(e)=>{
+    if(e.target.tagName==='INPUT') return; // не открываем при клике по чекбоксу
     fileInput.click();
   });
 
-  fileInput.addEventListener('change', ()=>{
-    const file = fileInput.files[0];
+  fileInput.addEventListener('change',()=>{
+    const file=fileInput.files[0];
     if(!file) return;
-    const reader = new FileReader();
-    reader.onload = e=> block.querySelector('img').src = e.target.result;
+    const reader=new FileReader();
+    reader.onload=e=>block.querySelector('img').src=e.target.result;
     reader.readAsDataURL(file);
 
-    block.querySelector('img').onload = ()=>{
-      const img = block.querySelector('img');
-      const aspect = img.naturalHeight/img.naturalWidth;
-      block.style.height = block.clientWidth*aspect + 'px';
+    fileInput.onchange=null; // отключаем повторное отображение пропов
+    fixCheckbox.style.display='none'; // скрываем чекбокс после выбора фото
 
-      // закрепление
+    block.querySelector('img').onload=()=>{
+      const img=block.querySelector('img');
+      const aspect=img.naturalHeight/img.naturalWidth;
+      block.style.height=block.clientWidth*aspect+'px';
       if(fixCheckbox.checked){
-        block.style.position = 'fixed';
-        block.style[pos] = '0';
+        block.style.position='fixed';
+        block.style[pos]='0';
       } else {
-        block.style.position = 'relative';
-        block.style[pos] = '';
+        block.style.position='relative';
+        block.style[pos]='';
       }
       adjustBody();
     };
   });
 
-  fixCheckbox.addEventListener('change', ()=>{
-    const img = block.querySelector('img');
+  fixCheckbox.addEventListener('change',()=>{
     if(fixCheckbox.checked){
       block.style.position='fixed';
       block.style[pos]='0';
@@ -113,33 +112,50 @@ function setupBlock(block, fileInput, fixCheckbox, pos='') {
   });
 }
 
-// Подгон body между закреплёнными блоками
 function adjustBody(){
-  const bodyDiv = document.getElementById('bodyBlocks');
-  const header = document.getElementById('headerBlock');
-  const footer = document.getElementById('footerBlock');
+  const bodyDiv=document.getElementById('bodyBlocks');
+  const header=document.getElementById('headerBlock');
+  const footer=document.getElementById('footerBlock');
 
-  let top = (header.style.position==='fixed')? header.clientHeight:0;
-  let bottom = (footer.style.position==='fixed')? footer.clientHeight:0;
-
-  bodyDiv.style.top = top + 'px';
-  bodyDiv.style.bottom = bottom + 'px';
+  let top=(header.style.position==='fixed')?header.clientHeight:0;
+  let bottom=(footer.style.position==='fixed')?footer.clientHeight:0;
+  bodyDiv.style.top=top+'px';
+  bodyDiv.style.bottom=bottom+'px';
 }
 
 // Настройка header/footer
-setupBlock(document.getElementById('headerBlock'), document.getElementById('headerUpload'), document.getElementById('headerFix'), 'top');
-setupBlock(document.getElementById('footerBlock'), document.getElementById('footerUpload'), document.getElementById('footerFix'), 'bottom');
+setupBlock(document.getElementById('headerBlock'),document.getElementById('headerUpload'),document.getElementById('headerFix'),'top');
+setupBlock(document.getElementById('footerBlock'),document.getElementById('footerUpload'),document.getElementById('footerFix'),'bottom');
 
-// Добавление новых блоков в body
-document.getElementById('addBodyBlockBtn').addEventListener('click', ()=>{
-  const bodyDiv = document.getElementById('bodyBlocks');
-  const newBlock = document.createElement('div');
+// Добавление блоков в body
+document.getElementById('addBodyBlockBtn').addEventListener('click',()=>{
+  const bodyDiv=document.getElementById('bodyBlocks');
+  const newBlock=document.createElement('div');
   newBlock.classList.add('block');
-  newBlock.innerHTML = `<img class="preview-img" alt="Body Фото"><input type="file" accept="image/*">`;
+  newBlock.innerHTML=`<div class="controls"><span class="drag-handle">☰</span> <button class="add-btn">Добавить фото (горизонтальный скрол)</button></div><div class="horizontal-scroll"></div><input type="file" accept="image/*" multiple>`;
   bodyDiv.appendChild(newBlock);
 
-  const fileInput = newBlock.querySelector('input[type=file]');
-  setupBlock(newBlock,fileInput,{checked:false}); // body блоки не фиксируются по умолчанию
+  const fileInput=newBlock.querySelector('input[type=file]');
+  const addBtn=newBlock.querySelector('button');
+  const scrollDiv=newBlock.querySelector('.horizontal-scroll');
+
+  addBtn.addEventListener('click',()=> fileInput.click());
+
+  fileInput.addEventListener('change',()=>{
+    const files=fileInput.files;
+    for(let f of files){
+      const reader=new FileReader();
+      const img=document.createElement('img');
+      reader.onload=e=>img.src=e.target.result;
+      reader.readAsDataURL(f);
+      scrollDiv.appendChild(img);
+    }
+    // подгоняем высоту блока под первое изображение
+    const firstImg=scrollDiv.querySelector('img');
+    firstImg.onload=()=> newBlock.style.height=newBlock.clientWidth*(firstImg.naturalHeight/firstImg.naturalWidth)+'px';
+  });
+
+  // TODO: можно добавить drag&drop для вертикальной перестановки блоков
 });
 </script>
 
