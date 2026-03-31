@@ -9,19 +9,24 @@
   html, body { width:100%; height:100%; font-family:Arial,sans-serif; background:#000; }
   body { height:100vh; overflow:hidden; }
 
+  /* Общий блок */
   .block { position: relative; width:100%; overflow:hidden; margin-bottom:2px; background:#111; cursor:pointer; border:1px solid #222; }
   img.preview-img { width:100%; height:auto; display:block; }
   input[type="file"] { display:none; }
 
+  /* Зоны */
   #bodyBlocks { position:absolute; width:100%; overflow-y:auto; display:flex; flex-direction:column; padding:5px; }
 
+  /* Контролы */
   .controls { display:flex; justify-content:space-between; align-items:center; padding:4px 8px; background: rgba(0,0,0,0.5); color:#fff; font-size:14px; }
 
   .add-btn { padding:5px 10px; background:#2196F3; border:none; border-radius:4px; color:#fff; cursor:pointer; }
 
+  /* Горизонтальный скролл */
   .horizontal-scroll { display:flex; overflow-x:auto; scroll-snap-type:x mandatory; -webkit-overflow-scrolling: touch; }
   .horizontal-scroll img { width:100vw; height:auto; flex-shrink:0; scroll-snap-align:start; }
 
+  /* Боковая панель блока */
   .side-add-btn {
     position: absolute;
     right: 5px;
@@ -49,7 +54,7 @@
 
 <!-- BODY -->
 <div id="bodyBlocks">
-  <button class="add-btn" id="addBodyBlockBtn">Добавить блок</button>
+  <button class="add-btn" id="addBodyBlockBtn">Добавить блок в конец</button>
 </div>
 
 <!-- FOOTER -->
@@ -62,12 +67,13 @@
 </div>
 
 <script>
-// Регистрация service worker
+// Service Worker
 if('serviceWorker' in navigator){
   navigator.serviceWorker.register('service-worker.js').then(()=>console.log('SW зарегистрирован'));
 }
 
-function setupBlock(block, fileInput, fixCheckbox, controlsDiv, pos='') {
+// Функция настройки блока (header/footer)
+function setupBlock(block, fileInput, fixCheckbox, controlsDiv, pos=''){
   block.addEventListener('click',(e)=>{
     if(e.target.tagName==='INPUT') return;
     fileInput.click();
@@ -81,7 +87,7 @@ function setupBlock(block, fileInput, fixCheckbox, controlsDiv, pos='') {
     reader.onload=e=>block.querySelector('img').src=e.target.result;
     reader.readAsDataURL(file);
 
-    controlsDiv.style.display='none'; // скрываем панель
+    controlsDiv.style.display='none'; // скрываем контролы
 
     if(fixCheckbox.checked){
       block.style.position='fixed';
@@ -102,6 +108,7 @@ function setupBlock(block, fileInput, fixCheckbox, controlsDiv, pos='') {
   });
 }
 
+// Подгонка body по header/footer
 function adjustBody(){
   const bodyDiv=document.getElementById('bodyBlocks');
   const header=document.getElementById('headerBlock');
@@ -114,14 +121,15 @@ function adjustBody(){
   bodyDiv.style.bottom=bottom+'px';
 }
 
-// header/footer
+// Header/Footer
 setupBlock(document.getElementById('headerBlock'),document.getElementById('headerUpload'),document.getElementById('headerFix'),document.getElementById('headerControls'),'top');
 setupBlock(document.getElementById('footerBlock'),document.getElementById('footerUpload'),document.getElementById('footerFix'),document.getElementById('footerControls'),'bottom');
 
-// добавление блоков
+// Добавление блока в конец body
 document.getElementById('addBodyBlockBtn').addEventListener('click',()=> addNewBodyBlock());
 
-function addNewBodyBlock(){
+// Функция добавления нового блока
+function addNewBodyBlock(afterBlock=null){
   const bodyDiv=document.getElementById('bodyBlocks');
   const newBlock=document.createElement('div');
   newBlock.classList.add('block');
@@ -134,16 +142,21 @@ function addNewBodyBlock(){
     <input type="file" accept="image/*" multiple>
   `;
 
+  // Боковая кнопка для добавления блока ниже
   const sideBtn=document.createElement('button');
   sideBtn.classList.add('side-add-btn');
   sideBtn.textContent='+';
   sideBtn.addEventListener('click',(e)=>{
     e.stopPropagation();
-    addNewBodyBlock();
+    addNewBodyBlock(newBlock);
   });
   newBlock.appendChild(sideBtn);
 
-  bodyDiv.appendChild(newBlock);
+  if(afterBlock){
+    bodyDiv.insertBefore(newBlock, afterBlock.nextSibling);
+  } else {
+    bodyDiv.appendChild(newBlock);
+  }
 
   const fileInput=newBlock.querySelector('input[type=file]');
   const addBtn=newBlock.querySelector('button');
@@ -164,13 +177,13 @@ function addNewBodyBlock(){
     const firstImg=scrollDiv.querySelector('img');
     firstImg.onload=()=> newBlock.style.height=newBlock.clientWidth*(firstImg.naturalHeight/firstImg.naturalWidth)+'px';
 
-    // скрываем контролы после загрузки фото
+    // скрываем контролы и боковую кнопку
     newBlock.querySelector('.controls').style.display='none';
     sideBtn.style.display='none';
   });
 }
 
-// изначальная подгонка body
+// Изначальная подгонка body
 adjustBody();
 </script>
 
