@@ -1,104 +1,129 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Моё приложение</title>
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#000000">
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Моё приложение</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; font-family: Arial, sans-serif; background: #000; height: 100%; }
+  body { display: flex; flex-direction: column; align-items: center; }
 
-    html, body {
-      width: 100%;
-      font-family: Arial, sans-serif;
-      background-color: #000;
-    }
+  .block { position: relative; width: 100%; overflow: hidden; cursor: pointer; margin-bottom: -4px; }
+  img.preview-img { width: 100%; height: auto; display: block; }
+  input[type="file"] { display: none; }
 
-    body {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
+  #bodyBlock { position: absolute; top: 0; bottom: 0; width: 100%; overflow-y: auto; }
 
-    .block {
-      position: relative;
-      width: 100%;
-      overflow: hidden;
-      margin-bottom: -4px; /* убирает полоску между блоками на некоторых экранах */
-      cursor: pointer; /* показываем, что блок кликабелен */
-    }
-
-    img.preview-img {
-      width: 100%;
-      height: auto;
-      display: block;
-    }
-
-    input[type="file"] { display: none; }
-  </style>
+  /* подсказка закрепления */
+  .fixed-label {
+    position: absolute;
+    bottom: 5px;
+    left: 5px;
+    padding: 2px 5px;
+    background: rgba(0,0,0,0.5);
+    color: #fff;
+    font-size: 12px;
+    border-radius: 4px;
+    z-index: 10;
+  }
+</style>
 </head>
 <body>
 
-  <!-- HEADER -->
-  <div class="block" id="headerBlock">
-    <img id="headerPreview" class="preview-img" alt="Header Фото">
-    <input type="file" id="headerUpload" accept="image/*">
-  </div>
+<!-- HEADER -->
+<div class="block" id="headerBlock">
+  <img id="headerPreview" class="preview-img" alt="Header Фото">
+  <span class="fixed-label" id="headerLabel">Закрепить</span>
+  <input type="file" id="headerUpload" accept="image/*">
+</div>
 
-  <!-- BODY -->
-  <div class="block" id="bodyBlock">
-    <img id="bodyPreview" class="preview-img" alt="Body Фото">
-    <input type="file" id="bodyUpload" accept="image/*">
-  </div>
+<!-- BODY -->
+<div class="block" id="bodyBlock">
+  <img id="bodyPreview" class="preview-img" alt="Body Фото">
+  <input type="file" id="bodyUpload" accept="image/*">
+</div>
 
-  <!-- FOOTER -->
-  <div class="block" id="footerBlock">
-    <img id="footerPreview" class="preview-img" alt="Footer Фото">
-    <input type="file" id="footerUpload" accept="image/*">
-  </div>
+<!-- FOOTER -->
+<div class="block" id="footerBlock">
+  <img id="footerPreview" class="preview-img" alt="Footer Фото">
+  <span class="fixed-label" id="footerLabel">Закрепить</span>
+  <input type="file" id="footerUpload" accept="image/*">
+</div>
 
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('service-worker.js')
-        .then(() => console.log('Service Worker registered'));
+<script>
+function setupUpload(blockId, inputId, previewId) {
+  const block = document.getElementById(blockId);
+  const input = document.getElementById(inputId);
+  const preview = document.getElementById(previewId);
+
+  // клик по блоку открывает загрузку
+  block.addEventListener('click', (e)=>{
+    // если клик на кнопке закрепления, не открываем файл
+    if(e.target.classList.contains('fixed-label')) return;
+    input.click();
+  });
+
+  input.addEventListener('change', ()=>{
+    const file = input.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = e=> preview.src = e.target.result;
+    reader.readAsDataURL(file);
+
+    preview.onload = ()=>{
+      const aspectRatio = preview.naturalHeight / preview.naturalWidth;
+      const width = block.clientWidth;
+      block.style.height = (width * aspectRatio)+'px';
+
+      adjustBody();
+    };
+  });
+}
+
+// переключение закрепления
+function setupToggle(blockId, labelId, position) {
+  const block = document.getElementById(blockId);
+  const label = document.getElementById(labelId);
+  let fixed = false;
+
+  label.addEventListener('click', (e)=>{
+    e.stopPropagation(); // чтобы не открывалась загрузка
+    fixed = !fixed;
+
+    if(fixed){
+      block.style.position = 'fixed';
+      block.style[position] = '0';
+      label.textContent = 'Открепить';
+    } else {
+      block.style.position = 'relative';
+      block.style[position] = '';
+      label.textContent = 'Закрепить';
     }
+    adjustBody();
+  });
+}
 
-    function setupUpload(blockId, inputId, previewId) {
-      const block = document.getElementById(blockId);
-      const input = document.getElementById(inputId);
-      const preview = document.getElementById(previewId);
+// body подстраивается под header/footer
+function adjustBody(){
+  const body = document.getElementById('bodyBlock');
+  const header = document.getElementById('headerBlock');
+  const footer = document.getElementById('footerBlock');
 
-      // Тап по блоку открывает выбор файла
-      block.addEventListener('click', () => input.click());
+  let top = (header.style.position==='fixed')? header.clientHeight : 0;
+  let bottom = (footer.style.position==='fixed')? footer.clientHeight : 0;
 
-      // Загрузка фото
-      input.addEventListener('change', () => {
-        const file = input.files[0];
-        if (!file) return;
+  body.style.top = top+'px';
+  body.style.bottom = bottom+'px';
+}
 
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          preview.src = e.target.result;
-        };
-        reader.readAsDataURL(file);
+setupUpload('headerBlock','headerUpload','headerPreview');
+setupUpload('bodyBlock','bodyUpload','bodyPreview');
+setupUpload('footerBlock','footerUpload','footerPreview');
 
-        // Подгоняем блок под размер изображения
-        preview.onload = () => {
-          const aspectRatio = preview.naturalHeight / preview.naturalWidth;
-          const width = block.clientWidth;
-          block.style.height = (width * aspectRatio) + 'px';
-        };
-      });
-    }
+setupToggle('headerBlock','headerLabel','top');
+setupToggle('footerBlock','footerLabel','bottom');
+</script>
 
-    setupUpload('headerBlock', 'headerUpload', 'headerPreview');
-    setupUpload('bodyBlock', 'bodyUpload', 'bodyPreview');
-    setupUpload('footerBlock', 'footerUpload', 'footerPreview');
-  </script>
 </body>
 </html>
