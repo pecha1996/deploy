@@ -5,27 +5,35 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Моё приложение</title>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  html, body { width: 100%; font-family: Arial, sans-serif; background: #000; height: 100%; }
-  body { display: flex; flex-direction: column; align-items: center; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { width:100%; font-family:Arial, sans-serif; background:#000; height:100%; }
+  body { display:flex; flex-direction:column; height:100vh; overflow:hidden; }
 
-  .block { position: relative; width: 100%; overflow: hidden; cursor: pointer; margin-bottom: -4px; }
-  img.preview-img { width: 100%; height: auto; display: block; }
-  input[type="file"] { display: none; }
+  .block { position: relative; width:100%; overflow:hidden; margin-bottom:-4px; cursor:pointer; background:#111; }
 
-  #bodyBlock { position: absolute; top: 0; bottom: 0; width: 100%; overflow-y: auto; }
+  img.preview-img { width:100%; height:auto; display:block; }
 
-  /* подсказка закрепления */
-  .fixed-label {
-    position: absolute;
-    bottom: 5px;
-    left: 5px;
-    padding: 2px 5px;
-    background: rgba(0,0,0,0.5);
+  input[type="file"] { display:none; }
+
+  #bodyBlocks { position:absolute; top:0; bottom:0; width:100%; overflow-y:auto; }
+
+  .controls {
+    display:flex;
+    justify-content: space-between;
+    background: rgba(0,0,0,0.6);
     color: #fff;
-    font-size: 12px;
-    border-radius: 4px;
-    z-index: 10;
+    padding:4px 8px;
+    font-size:14px;
+  }
+
+  .add-btn {
+    margin:5px;
+    padding:5px 10px;
+    background:#2196F3;
+    border:none;
+    border-radius:4px;
+    color:#fff;
+    cursor:pointer;
   }
 </style>
 </head>
@@ -33,96 +41,106 @@
 
 <!-- HEADER -->
 <div class="block" id="headerBlock">
+  <div class="controls">
+    <label>Закрепить: <input type="checkbox" id="headerFix"></label>
+  </div>
   <img id="headerPreview" class="preview-img" alt="Header Фото">
-  <span class="fixed-label" id="headerLabel">Закрепить</span>
   <input type="file" id="headerUpload" accept="image/*">
 </div>
 
-<!-- BODY -->
-<div class="block" id="bodyBlock">
-  <img id="bodyPreview" class="preview-img" alt="Body Фото">
-  <input type="file" id="bodyUpload" accept="image/*">
+<!-- BODY с возможностью добавления блоков -->
+<div id="bodyBlocks">
+  <div class="controls">
+    <button class="add-btn" id="addBodyBlockBtn">Добавить блок</button>
+  </div>
 </div>
 
 <!-- FOOTER -->
 <div class="block" id="footerBlock">
+  <div class="controls">
+    <label>Закрепить: <input type="checkbox" id="footerFix"></label>
+  </div>
   <img id="footerPreview" class="preview-img" alt="Footer Фото">
-  <span class="fixed-label" id="footerLabel">Закрепить</span>
   <input type="file" id="footerUpload" accept="image/*">
 </div>
 
 <script>
-function setupUpload(blockId, inputId, previewId) {
-  const block = document.getElementById(blockId);
-  const input = document.getElementById(inputId);
-  const preview = document.getElementById(previewId);
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('service-worker.js').then(()=>console.log('SW зарегистрирован'));
+}
 
-  // клик по блоку открывает загрузку
+// Настройка блока
+function setupBlock(block, fileInput, fixCheckbox, pos='') {
   block.addEventListener('click', (e)=>{
-    // если клик на кнопке закрепления, не открываем файл
-    if(e.target.classList.contains('fixed-label')) return;
-    input.click();
+    if(e.target.tagName==='INPUT') return; // не открывать файл при клике по чекбоксу
+    fileInput.click();
   });
 
-  input.addEventListener('change', ()=>{
-    const file = input.files[0];
+  fileInput.addEventListener('change', ()=>{
+    const file = fileInput.files[0];
     if(!file) return;
     const reader = new FileReader();
-    reader.onload = e=> preview.src = e.target.result;
+    reader.onload = e=> block.querySelector('img').src = e.target.result;
     reader.readAsDataURL(file);
 
-    preview.onload = ()=>{
-      const aspectRatio = preview.naturalHeight / preview.naturalWidth;
-      const width = block.clientWidth;
-      block.style.height = (width * aspectRatio)+'px';
+    block.querySelector('img').onload = ()=>{
+      const img = block.querySelector('img');
+      const aspect = img.naturalHeight/img.naturalWidth;
+      block.style.height = block.clientWidth*aspect + 'px';
 
+      // закрепление
+      if(fixCheckbox.checked){
+        block.style.position = 'fixed';
+        block.style[pos] = '0';
+      } else {
+        block.style.position = 'relative';
+        block.style[pos] = '';
+      }
       adjustBody();
     };
   });
-}
 
-// переключение закрепления
-function setupToggle(blockId, labelId, position) {
-  const block = document.getElementById(blockId);
-  const label = document.getElementById(labelId);
-  let fixed = false;
-
-  label.addEventListener('click', (e)=>{
-    e.stopPropagation(); // чтобы не открывалась загрузка
-    fixed = !fixed;
-
-    if(fixed){
-      block.style.position = 'fixed';
-      block.style[position] = '0';
-      label.textContent = 'Открепить';
+  fixCheckbox.addEventListener('change', ()=>{
+    const img = block.querySelector('img');
+    if(fixCheckbox.checked){
+      block.style.position='fixed';
+      block.style[pos]='0';
     } else {
-      block.style.position = 'relative';
-      block.style[position] = '';
-      label.textContent = 'Закрепить';
+      block.style.position='relative';
+      block.style[pos]='';
     }
     adjustBody();
   });
 }
 
-// body подстраивается под header/footer
+// Подгон body между закреплёнными блоками
 function adjustBody(){
-  const body = document.getElementById('bodyBlock');
+  const bodyDiv = document.getElementById('bodyBlocks');
   const header = document.getElementById('headerBlock');
   const footer = document.getElementById('footerBlock');
 
-  let top = (header.style.position==='fixed')? header.clientHeight : 0;
-  let bottom = (footer.style.position==='fixed')? footer.clientHeight : 0;
+  let top = (header.style.position==='fixed')? header.clientHeight:0;
+  let bottom = (footer.style.position==='fixed')? footer.clientHeight:0;
 
-  body.style.top = top+'px';
-  body.style.bottom = bottom+'px';
+  bodyDiv.style.top = top + 'px';
+  bodyDiv.style.bottom = bottom + 'px';
 }
 
-setupUpload('headerBlock','headerUpload','headerPreview');
-setupUpload('bodyBlock','bodyUpload','bodyPreview');
-setupUpload('footerBlock','footerUpload','footerPreview');
+// Настройка header/footer
+setupBlock(document.getElementById('headerBlock'), document.getElementById('headerUpload'), document.getElementById('headerFix'), 'top');
+setupBlock(document.getElementById('footerBlock'), document.getElementById('footerUpload'), document.getElementById('footerFix'), 'bottom');
 
-setupToggle('headerBlock','headerLabel','top');
-setupToggle('footerBlock','footerLabel','bottom');
+// Добавление новых блоков в body
+document.getElementById('addBodyBlockBtn').addEventListener('click', ()=>{
+  const bodyDiv = document.getElementById('bodyBlocks');
+  const newBlock = document.createElement('div');
+  newBlock.classList.add('block');
+  newBlock.innerHTML = `<img class="preview-img" alt="Body Фото"><input type="file" accept="image/*">`;
+  bodyDiv.appendChild(newBlock);
+
+  const fileInput = newBlock.querySelector('input[type=file]');
+  setupBlock(newBlock,fileInput,{checked:false}); // body блоки не фиксируются по умолчанию
+});
 </script>
 
 </body>
