@@ -1,195 +1,179 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
-  <title>My App</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="manifest" href="manifest.json">
 
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#0f0f0f">
+<style>
+body {
+  margin: 0;
+  background: #0b0b0b;
+  color: white;
+  font-family: -apple-system, Arial;
+}
 
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #0f0f0f;
-      color: white;
-    }
+/* TOP */
+.topbar {
+  position: fixed;
+  top: 0;
+  width: 100%;
+  padding: 15px;
+  background: rgba(10,10,10,0.9);
+  backdrop-filter: blur(10px);
+  z-index: 100;
+}
 
-    /* 🔝 TOP BAR */
-    .topbar {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 70px;
-      background: rgba(20,20,20,0.9);
-      backdrop-filter: blur(10px);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 15px;
-      z-index: 1000;
-    }
+.profile {
+  font-size: 20px;
+  font-weight: bold;
+}
 
-    .coin {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
+/* CONTENT */
+.content {
+  padding: 80px 15px 90px;
+}
 
-    .coin-icon {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      background: orange;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: bold;
-    }
+/* CARD */
+.card {
+  background: #1a1a1a;
+  border-radius: 20px;
+  padding: 15px;
+  margin-bottom: 15px;
+}
 
-    .coin-info {
-      display: flex;
-      flex-direction: column;
-      font-size: 14px;
-    }
+/* HORIZONTAL SCROLL */
+.scroll {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+}
 
-    .balance {
-      text-align: right;
-      font-size: 14px;
-    }
+.small-card {
+  min-width: 220px;
+  background: #1a1a1a;
+  border-radius: 20px;
+  padding: 15px;
+}
 
-    /* 📦 CONTENT */
-    .content {
-      padding: 90px 15px 90px;
-    }
+/* CRYPTO */
+.crypto {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
 
-    .card {
-      background: #1c1c1c;
-      border-radius: 20px;
-      padding: 15px;
-      margin-bottom: 15px;
-    }
+.crypto-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
 
-    .card img {
-      width: 100%;
-      border-radius: 15px;
-    }
+.icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: orange;
+}
 
-    /* 🔘 INSTALL BUTTON */
-    .install-btn {
-      margin-top: 10px;
-      width: 100%;
-      padding: 12px;
-      border: none;
-      border-radius: 12px;
-      background: #4CAF50;
-      color: white;
-      font-size: 16px;
-    }
+/* BUTTON */
+.main-btn {
+  width: 100%;
+  padding: 15px;
+  border-radius: 15px;
+  border: none;
+  background: #a78bfa;
+  color: black;
+  font-weight: bold;
+}
 
-    /* 🔻 BOTTOM NAV */
-    .navbar {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      height: 70px;
-      background: rgba(20,20,20,0.9);
-      backdrop-filter: blur(10px);
-      display: flex;
-      justify-content: space-around;
-      align-items: center;
-    }
+/* ACTIONS */
+.actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+}
 
-    .nav-item {
-      text-align: center;
-      font-size: 12px;
-      opacity: 0.6;
-    }
+.action {
+  background: #1a1a1a;
+  padding: 15px;
+  border-radius: 15px;
+  text-align: center;
+  width: 23%;
+}
 
-    .nav-item.active {
-      opacity: 1;
-      color: #a78bfa;
-    }
+/* NAVBAR */
+.navbar {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  height: 70px;
+  background: rgba(10,10,10,0.9);
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+}
 
-    .icon {
-      font-size: 20px;
-      display: block;
-    }
-
-  </style>
+</style>
 </head>
 
 <body>
 
-  <!-- 🔝 TOP BAR -->
-  <div class="topbar">
-    <div class="coin">
-      <div class="coin-icon">₿</div>
-      <div class="coin-info">
-        <b>Bitcoin</b>
-        <span style="opacity:0.6;">0 BTC</span>
+<!-- TOP -->
+<div class="topbar">
+  <div class="profile">@ceo00000001</div>
+</div>
+
+<!-- CONTENT -->
+<div class="content">
+
+  <!-- WALLET -->
+  <div class="card crypto">
+    <div class="crypto-left">
+      <div class="icon"></div>
+      <div>
+        <b>Bitcoin</b><br>
+        <span style="opacity:0.5;">0 BTC</span>
       </div>
     </div>
-
-    <div class="balance">
-      <div>$0.00</div>
-      <div style="opacity:0.6;">$0.00</div>
+    <div>
+      $0.00<br>
+      <span style="opacity:0.5;">$0.00</span>
     </div>
   </div>
 
-  <!-- 📦 CONTENT -->
-  <div class="content">
+  <!-- PREDICTIONS -->
+  <h3>Прогнозы</h3>
 
-    <div class="card">
-      <img src="your-image.jpg">
-    </div>
-
-    <div class="card">
-      <h3>Install App</h3>
-      <button id="installBtn" class="install-btn">Install</button>
-    </div>
-
+  <div class="scroll">
+    <div class="small-card">Ethereum price</div>
+    <div class="small-card">BTC price</div>
   </div>
 
-  <!-- 🔻 BOTTOM NAV -->
-  <div class="navbar">
-    <div class="nav-item active">
-      <span class="icon">🏠</span>
-    </div>
-    <div class="nav-item">
-      <span class="icon">💳</span>
-    </div>
-    <div class="nav-item">
-      <span class="icon">🔄</span>
-    </div>
-    <div class="nav-item">
-      <span class="icon">💬</span>
-    </div>
-    <div class="nav-item">
-      <span class="icon">🔍</span>
-    </div>
+  <!-- BUTTON -->
+  <div class="card">
+    <h2>Ваш кошелек готов</h2>
+    <button class="main-btn">Купить SOL</button>
   </div>
 
-  <script>
-    let deferredPrompt;
+  <!-- ACTIONS -->
+  <div class="actions">
+    <div class="action">📤</div>
+    <div class="action">🔄</div>
+    <div class="action">📥</div>
+    <div class="action">💲</div>
+  </div>
 
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      deferredPrompt = e;
-    });
+</div>
 
-    document.getElementById('installBtn').addEventListener('click', async () => {
-      if (!deferredPrompt) return;
-      deferredPrompt.prompt();
-      deferredPrompt = null;
-    });
-
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('service-worker.js');
-    }
-  </script>
+<!-- NAV -->
+<div class="navbar">
+  <div>🏠</div>
+  <div>💳</div>
+  <div>🔄</div>
+  <div>💬</div>
+  <div>🔍</div>
+</div>
 
 </body>
 </html>
