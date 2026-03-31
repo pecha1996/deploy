@@ -3,131 +3,144 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Редактор блоков PWA чистый</title>
-<meta name="theme-color" content="#000000" id="themeColorMeta">
+<title>Моё приложение</title>
 <style>
-*{margin:0;padding:0;box-sizing:border-box;}
-html,body{width:100%;height:100%;font-family:Arial,sans-serif;background:#000;display:flex;flex-direction:column;}
-.block{position:relative;width:100%;overflow:hidden;background:#000;cursor:pointer;}
-img.preview-img{width:100%;height:auto;display:block;}
-input[type=file]{display:none;}
-.controls{display:flex;justify-content:space-between;align-items:center;padding:4px 8px;background: rgba(0,0,0,0.5);color:#fff;font-size:14px;}
-#bodyBlocks{flex:1;overflow-y:auto;display:flex;flex-direction:column;}
-#pullRefresh{position:absolute;top:-40px;left:50%;transform:translateX(-50%);width:30px;height:30px;border:3px solid #fff;border-top:3px solid #2196F3;border-radius:50%;animation:spin 1s linear infinite;display:none;z-index:100;}
-@keyframes spin{0%{transform:translateX(-50%) rotate(0deg);}100%{transform:translateX(-50%) rotate(360deg);}}
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { width:100%; font-family:Arial, sans-serif; background:#000; height:100%; }
+  body { display:flex; flex-direction:column; height:100vh; overflow:hidden; }
+
+  .block { position: relative; width:100%; overflow:hidden; margin-bottom:-4px; cursor:pointer; background:#111; }
+
+  img.preview-img { width:100%; height:auto; display:block; }
+
+  input[type="file"] { display:none; }
+
+  #bodyBlocks { position:absolute; top:0; bottom:0; width:100%; overflow-y:auto; }
+
+  .controls {
+    display:flex;
+    justify-content: space-between;
+    background: rgba(0,0,0,0.6);
+    color: #fff;
+    padding:4px 8px;
+    font-size:14px;
+  }
+
+  .add-btn {
+    margin:5px;
+    padding:5px 10px;
+    background:#2196F3;
+    border:none;
+    border-radius:4px;
+    color:#fff;
+    cursor:pointer;
+  }
 </style>
 </head>
 <body>
 
 <!-- HEADER -->
-<div class="block" id="headerBlock" style="height:100px;">
-  <div class="controls" id="headerControls">
-    <label>Закрепить <input type="checkbox" id="headerFix" checked></label>
+<div class="block" id="headerBlock">
+  <div class="controls">
+    <label>Закрепить: <input type="checkbox" id="headerFix"></label>
   </div>
   <img id="headerPreview" class="preview-img" alt="Header Фото">
   <input type="file" id="headerUpload" accept="image/*">
 </div>
 
-<!-- BODY -->
+<!-- BODY с возможностью добавления блоков -->
 <div id="bodyBlocks">
-  <div id="pullRefresh"></div>
+  <div class="controls">
+    <button class="add-btn" id="addBodyBlockBtn">Добавить блок</button>
+  </div>
 </div>
 
-<button id="addBodyBlockBtn" style="padding:10px;background:#2196F3;color:#fff;border:none;width:100%;cursor:pointer;">Добавить блок в body</button>
-
 <!-- FOOTER -->
-<div class="block" id="footerBlock" style="height:100px;">
-  <div class="controls" id="footerControls">
-    <label>Закрепить <input type="checkbox" id="footerFix" checked></label>
+<div class="block" id="footerBlock">
+  <div class="controls">
+    <label>Закрепить: <input type="checkbox" id="footerFix"></label>
   </div>
   <img id="footerPreview" class="preview-img" alt="Footer Фото">
   <input type="file" id="footerUpload" accept="image/*">
 </div>
 
 <script>
-// Header/Footer
-function setupBlock(block,fileInput,controlsDiv){
-  block.addEventListener('click', e=>{
-    if(e.target.tagName==='INPUT') return;
-    fileInput.click();
-  });
-  fileInput.addEventListener('change', ()=>{
-    const file=fileInput.files[0];
-    if(!file) return;
-    const reader=new FileReader();
-    reader.onload=e=>{
-      block.querySelector('img').src=e.target.result;
-    };
-    reader.readAsDataURL(file);
-    controlsDiv.style.display='none';
-    block.querySelector('img').onload=()=>{
-      const img=block.querySelector('img');
-      block.style.height=block.clientWidth*(img.naturalHeight/img.naturalWidth)+'px';
-    };
-  });
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('service-worker.js').then(()=>console.log('SW зарегистрирован'));
 }
 
-setupBlock(document.getElementById('headerBlock'),document.getElementById('headerUpload'),document.getElementById('headerControls'));
-setupBlock(document.getElementById('footerBlock'),document.getElementById('footerUpload'),document.getElementById('footerControls'));
-
-// Добавление вертикальных блоков в body
-const bodyDiv=document.getElementById('bodyBlocks');
-document.getElementById('addBodyBlockBtn').addEventListener('click', addBodyBlock);
-
-function addBodyBlock(){
-  const newBlock=document.createElement('div');
-  newBlock.classList.add('block');
-  newBlock.style.height='300px'; // стартовая высота, подгоняется под фото
-  const img=document.createElement('img');
-  img.classList.add('preview-img');
-  newBlock.appendChild(img);
-
-  const fileInput=document.createElement('input');
-  fileInput.type='file';
-  fileInput.accept='image/*';
-  newBlock.appendChild(fileInput);
-
-  newBlock.addEventListener('click', ()=>{
+// Настройка блока
+function setupBlock(block, fileInput, fixCheckbox, pos='') {
+  block.addEventListener('click', (e)=>{
+    if(e.target.tagName==='INPUT') return; // не открывать файл при клике по чекбоксу
     fileInput.click();
   });
 
   fileInput.addEventListener('change', ()=>{
-    const file=fileInput.files[0];
+    const file = fileInput.files[0];
     if(!file) return;
-    const reader=new FileReader();
-    reader.onload=e=>img.src=e.target.result;
+    const reader = new FileReader();
+    reader.onload = e=> block.querySelector('img').src = e.target.result;
     reader.readAsDataURL(file);
-    img.onload=()=>{ newBlock.style.height=newBlock.clientWidth*(img.naturalHeight/img.naturalWidth)+'px'; };
+
+    block.querySelector('img').onload = ()=>{
+      const img = block.querySelector('img');
+      const aspect = img.naturalHeight/img.naturalWidth;
+      block.style.height = block.clientWidth*aspect + 'px';
+
+      // закрепление
+      if(fixCheckbox.checked){
+        block.style.position = 'fixed';
+        block.style[pos] = '0';
+      } else {
+        block.style.position = 'relative';
+        block.style[pos] = '';
+      }
+      adjustBody();
+    };
   });
 
-  bodyDiv.appendChild(newBlock);
-}
-
-// Pull-to-refresh
-const pullCircle=document.getElementById('pullRefresh');
-let startY=0, pullDistance=0;
-bodyDiv.addEventListener('touchstart', e=>{if(bodyDiv.scrollTop===0){startY=e.touches[0].clientY;}});
-bodyDiv.addEventListener('touchmove', e=>{
-  if(bodyDiv.scrollTop===0){
-    pullDistance=e.touches[0].clientY-startY;
-    if(pullDistance>0){
-      pullCircle.style.display='block';
-      pullCircle.style.top=(-40+pullDistance)+'px';
+  fixCheckbox.addEventListener('change', ()=>{
+    const img = block.querySelector('img');
+    if(fixCheckbox.checked){
+      block.style.position='fixed';
+      block.style[pos]='0';
+    } else {
+      block.style.position='relative';
+      block.style[pos]='';
     }
-  }
-});
-bodyDiv.addEventListener('touchend', e=>{
-  if(pullDistance>50){
-    pullCircle.style.top='0px';
-    setTimeout(()=>{pullCircle.style.display='none';pullCircle.style.top='-40px';},1000);
-    console.log('Обновление...');
-  } else { pullCircle.style.display='none'; }
-  pullDistance=0;
-});
+    adjustBody();
+  });
+}
 
-// Статус бар
-function setStatusBarColor(color){document.getElementById('themeColorMeta').setAttribute('content',color);}
-setStatusBarColor('#000000');
+// Подгон body между закреплёнными блоками
+function adjustBody(){
+  const bodyDiv = document.getElementById('bodyBlocks');
+  const header = document.getElementById('headerBlock');
+  const footer = document.getElementById('footerBlock');
+
+  let top = (header.style.position==='fixed')? header.clientHeight:0;
+  let bottom = (footer.style.position==='fixed')? footer.clientHeight:0;
+
+  bodyDiv.style.top = top + 'px';
+  bodyDiv.style.bottom = bottom + 'px';
+}
+
+// Настройка header/footer
+setupBlock(document.getElementById('headerBlock'), document.getElementById('headerUpload'), document.getElementById('headerFix'), 'top');
+setupBlock(document.getElementById('footerBlock'), document.getElementById('footerUpload'), document.getElementById('footerFix'), 'bottom');
+
+// Добавление новых блоков в body
+document.getElementById('addBodyBlockBtn').addEventListener('click', ()=>{
+  const bodyDiv = document.getElementById('bodyBlocks');
+  const newBlock = document.createElement('div');
+  newBlock.classList.add('block');
+  newBlock.innerHTML = `<img class="preview-img" alt="Body Фото"><input type="file" accept="image/*">`;
+  bodyDiv.appendChild(newBlock);
+
+  const fileInput = newBlock.querySelector('input[type=file]');
+  setupBlock(newBlock,fileInput,{checked:false}); // body блоки не фиксируются по умолчанию
+});
 </script>
 
 </body>
