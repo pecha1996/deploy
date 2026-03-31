@@ -9,72 +9,95 @@
   <style>
     * {
       box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body, html {
+      height: 100%;
+      font-family: Arial, sans-serif;
     }
 
     body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-      background-color: #000;
-      color: #fff;
       display: flex;
       flex-direction: column;
       min-height: 100vh;
     }
 
-    header, footer {
-      padding: 15px;
-      text-align: center;
-      background-color: #111;
-      border-radius: 0;
+    header, main, footer {
       position: relative;
+      width: 100%;
       overflow: hidden;
     }
 
-    main {
-      flex: 1;
-      padding: 20px;
+    header {
+      height: 25vh;
+      background-color: #111;
       display: flex;
-      flex-direction: column;
       align-items: center;
-      gap: 20px;
-      background-color: #000;
-      position: relative;
+      justify-content: center;
     }
 
-    .block {
+    main {
+      height: 50vh;
       background-color: #222;
-      padding: 15px;
-      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    footer {
+      height: 25vh;
+      background-color: #111;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    img.preview-img {
+      position: absolute;
+      top: 0; left: 0;
       width: 100%;
-      max-width: 400px;
-      text-align: center;
-      position: relative;
+      height: 100%;
+      object-fit: cover;
+      z-index: 0;
     }
 
     .upload-btn {
-      display: inline-block;
-      background: #4CAF50;
-      color: white;
-      text-align: center;
-      padding: 12px 20px;
-      border-radius: 8px;
+      position: absolute;
+      z-index: 1;
+      background: rgba(0,0,0,0.5);
+      color: #fff;
+      font-size: 32px;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       cursor: pointer;
-      font-size: 16px;
-      border: none;
-      margin-bottom: 10px;
+      user-select: none;
     }
 
-    .preview-img {
-      max-width: 100%;
-      border-radius: 12px;
-      box-shadow: 0 0 10px #fff;
-    }
+    #headerBtn { top: 10px; right: 10px; }
+    #bodyBtn { top: 10px; right: 10px; }
+    #footerBtn { top: 10px; right: 10px; }
+
+    input[type="file"] { display: none; }
 
     #installBtn {
-      display: none;
+      position: absolute;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 2;
+      padding: 10px 20px;
+      font-size: 16px;
       background: #2196F3;
-      margin-bottom: 10px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      color: #fff;
     }
   </style>
 </head>
@@ -82,32 +105,24 @@
 
   <!-- HEADER -->
   <header>
-    <h1>🚀 Header</h1>
-    <label class="upload-btn" for="headerUpload">Загрузить фото в Header</label>
-    <input type="file" id="headerUpload" accept="image/*" style="display:none;">
     <img id="headerPreview" class="preview-img" alt="Header Фото">
+    <label id="headerBtn" class="upload-btn" for="headerUpload">+</label>
+    <input type="file" id="headerUpload" accept="image/*">
   </header>
 
   <!-- BODY -->
   <main>
-    <div class="block">
-      <h2>Body</h2>
-      <label class="upload-btn" for="bodyUpload">Загрузить фото в Body</label>
-      <input type="file" id="bodyUpload" accept="image/*" style="display:none;">
-      <img id="bodyPreview" class="preview-img" alt="Body Фото">
-    </div>
-
-    <div class="block">
-      <button id="installBtn">Установить приложение</button>
-    </div>
+    <img id="bodyPreview" class="preview-img" alt="Body Фото">
+    <label id="bodyBtn" class="upload-btn" for="bodyUpload">+</label>
+    <input type="file" id="bodyUpload" accept="image/*">
+    <button id="installBtn">Установить приложение</button>
   </main>
 
   <!-- FOOTER -->
   <footer>
-    <p>Footer</p>
-    <label class="upload-btn" for="footerUpload">Загрузить фото в Footer</label>
-    <input type="file" id="footerUpload" accept="image/*" style="display:none;">
     <img id="footerPreview" class="preview-img" alt="Footer Фото">
+    <label id="footerBtn" class="upload-btn" for="footerUpload">+</label>
+    <input type="file" id="footerUpload" accept="image/*">
   </footer>
 
   <script>
@@ -150,5 +165,6 @@
     setupUpload('bodyUpload', 'bodyPreview');
     setupUpload('footerUpload', 'footerPreview');
   </script>
+
 </body>
 </html>
