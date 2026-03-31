@@ -3,28 +3,24 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Редактор блоков PWA</title>
+<title>Редактор блоков PWA чистый</title>
 <meta name="theme-color" content="#000000" id="themeColorMeta">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 html,body{width:100%;height:100%;font-family:Arial,sans-serif;background:#000;display:flex;flex-direction:column;}
-.block{position:relative;width:100%;overflow:hidden;background:#111;}
+.block{position:relative;width:100%;overflow:hidden;background:#000;cursor:pointer;}
 img.preview-img{width:100%;height:auto;display:block;}
 input[type=file]{display:none;}
 .controls{display:flex;justify-content:space-between;align-items:center;padding:4px 8px;background: rgba(0,0,0,0.5);color:#fff;font-size:14px;}
-.add-btn{padding:5px 10px;background:#2196F3;border:none;border-radius:4px;color:#fff;cursor:pointer;}
-#bodyBlocks{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:0;position:relative;}
-.horizontal-scroll{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;}
-.horizontal-scroll img{height:200px;flex-shrink:0;scroll-snap-align:start;margin-right:0;}
-.side-add-btn{position:absolute;right:5px;top:5px;padding:4px 8px;background:#0f0;border:none;border-radius:4px;color:#000;cursor:pointer;z-index:10;}
-#pullRefresh{position:absolute;top:-50px;left:50%;transform:translateX(-50%);width:30px;height:30px;border:3px solid #fff;border-top:3px solid #2196F3;border-radius:50%;animation:spin 1s linear infinite;display:none;z-index:100;}
+#bodyBlocks{flex:1;overflow-y:auto;display:flex;flex-direction:column;}
+#pullRefresh{position:absolute;top:-40px;left:50%;transform:translateX(-50%);width:30px;height:30px;border:3px solid #fff;border-top:3px solid #2196F3;border-radius:50%;animation:spin 1s linear infinite;display:none;z-index:100;}
 @keyframes spin{0%{transform:translateX(-50%) rotate(0deg);}100%{transform:translateX(-50%) rotate(360deg);}}
 </style>
 </head>
 <body>
 
 <!-- HEADER -->
-<div class="block" id="headerBlock">
+<div class="block" id="headerBlock" style="height:100px;">
   <div class="controls" id="headerControls">
     <label>Закрепить <input type="checkbox" id="headerFix" checked></label>
   </div>
@@ -35,11 +31,12 @@ input[type=file]{display:none;}
 <!-- BODY -->
 <div id="bodyBlocks">
   <div id="pullRefresh"></div>
-  <button class="add-btn" id="addBodyBlockBtn">Добавить блок в конец</button>
 </div>
 
+<button id="addBodyBlockBtn" style="padding:10px;background:#2196F3;color:#fff;border:none;width:100%;cursor:pointer;">Добавить блок в body</button>
+
 <!-- FOOTER -->
-<div class="block" id="footerBlock">
+<div class="block" id="footerBlock" style="height:100px;">
   <div class="controls" id="footerControls">
     <label>Закрепить <input type="checkbox" id="footerFix" checked></label>
   </div>
@@ -48,17 +45,19 @@ input[type=file]{display:none;}
 </div>
 
 <script>
-// Настройка header/footer
+// Header/Footer
 function setupBlock(block,fileInput,controlsDiv){
-  block.addEventListener('click',e=>{
+  block.addEventListener('click', e=>{
     if(e.target.tagName==='INPUT') return;
     fileInput.click();
   });
-  fileInput.addEventListener('change',()=>{
+  fileInput.addEventListener('change', ()=>{
     const file=fileInput.files[0];
     if(!file) return;
     const reader=new FileReader();
-    reader.onload=e=>block.querySelector('img').src=e.target.result;
+    reader.onload=e=>{
+      block.querySelector('img').src=e.target.result;
+    };
     reader.readAsDataURL(file);
     controlsDiv.style.display='none';
     block.querySelector('img').onload=()=>{
@@ -71,56 +70,40 @@ function setupBlock(block,fileInput,controlsDiv){
 setupBlock(document.getElementById('headerBlock'),document.getElementById('headerUpload'),document.getElementById('headerControls'));
 setupBlock(document.getElementById('footerBlock'),document.getElementById('footerUpload'),document.getElementById('footerControls'));
 
-// Добавление блока body
-document.getElementById('addBodyBlockBtn').addEventListener('click',()=> addNewBodyBlock());
+// Добавление вертикальных блоков в body
+const bodyDiv=document.getElementById('bodyBlocks');
+document.getElementById('addBodyBlockBtn').addEventListener('click', addBodyBlock);
 
-function addNewBodyBlock(afterBlock=null){
-  const bodyDiv=document.getElementById('bodyBlocks');
+function addBodyBlock(){
   const newBlock=document.createElement('div');
   newBlock.classList.add('block');
-  newBlock.style.position='relative';
-  newBlock.innerHTML=`
-    <div class="controls">
-      <button class="add-btn">Добавить изображения (горизонтальный скрол)</button>
-    </div>
-    <div class="horizontal-scroll"></div>
-    <input type="file" accept="image/*" multiple>
-  `;
-  const sideBtn=document.createElement('button');
-  sideBtn.classList.add('side-add-btn');
-  sideBtn.textContent='+';
-  sideBtn.addEventListener('click',e=>{
-    e.stopPropagation();
-    addNewBodyBlock(newBlock);
+  newBlock.style.height='300px'; // стартовая высота, подгоняется под фото
+  const img=document.createElement('img');
+  img.classList.add('preview-img');
+  newBlock.appendChild(img);
+
+  const fileInput=document.createElement('input');
+  fileInput.type='file';
+  fileInput.accept='image/*';
+  newBlock.appendChild(fileInput);
+
+  newBlock.addEventListener('click', ()=>{
+    fileInput.click();
   });
-  newBlock.appendChild(sideBtn);
 
-  if(afterBlock){bodyDiv.insertBefore(newBlock,afterBlock.nextSibling);}
-  else{bodyDiv.appendChild(newBlock);}
-
-  const fileInput=newBlock.querySelector('input[type=file]');
-  const addBtn=newBlock.querySelector('button');
-  const scrollDiv=newBlock.querySelector('.horizontal-scroll');
-
-  addBtn.addEventListener('click',()=> fileInput.click());
-  fileInput.addEventListener('change',()=>{
-    const files=fileInput.files;
-    for(let f of files){
-      const reader=new FileReader();
-      const img=document.createElement('img');
-      reader.onload=e=>img.src=e.target.result;
-      reader.readAsDataURL(f);
-      scrollDiv.appendChild(img);
-    }
-    const firstImg=scrollDiv.querySelector('img');
-    firstImg.onload=()=> newBlock.style.height=firstImg.height+'px';
-    newBlock.querySelector('.controls').style.display='none';
-    sideBtn.style.display='none';
+  fileInput.addEventListener('change', ()=>{
+    const file=fileInput.files[0];
+    if(!file) return;
+    const reader=new FileReader();
+    reader.onload=e=>img.src=e.target.result;
+    reader.readAsDataURL(file);
+    img.onload=()=>{ newBlock.style.height=newBlock.clientWidth*(img.naturalHeight/img.naturalWidth)+'px'; };
   });
+
+  bodyDiv.appendChild(newBlock);
 }
 
 // Pull-to-refresh
-const bodyDiv=document.getElementById('bodyBlocks');
 const pullCircle=document.getElementById('pullRefresh');
 let startY=0, pullDistance=0;
 bodyDiv.addEventListener('touchstart', e=>{if(bodyDiv.scrollTop===0){startY=e.touches[0].clientY;}});
@@ -129,25 +112,22 @@ bodyDiv.addEventListener('touchmove', e=>{
     pullDistance=e.touches[0].clientY-startY;
     if(pullDistance>0){
       pullCircle.style.display='block';
-      pullCircle.style.top=(-50+pullDistance)+'px';
+      pullCircle.style.top=(-40+pullDistance)+'px';
     }
   }
 });
 bodyDiv.addEventListener('touchend', e=>{
   if(pullDistance>50){
     pullCircle.style.top='0px';
-    setTimeout(()=>{pullCircle.style.display='none';pullCircle.style.top='-50px';},1000);
-    // Тут можно вызвать функцию обновления
+    setTimeout(()=>{pullCircle.style.display='none';pullCircle.style.top='-40px';},1000);
     console.log('Обновление...');
-  } else {
-    pullCircle.style.display='none';
-  }
+  } else { pullCircle.style.display='none'; }
   pullDistance=0;
 });
 
-// Выбор цвета status bar
+// Статус бар
 function setStatusBarColor(color){document.getElementById('themeColorMeta').setAttribute('content',color);}
-setStatusBarColor('#000000'); // пример, можно менять
+setStatusBarColor('#000000');
 </script>
 
 </body>
