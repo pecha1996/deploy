@@ -13,13 +13,28 @@
   img.preview-img { width:100%; height:auto; display:block; }
   input[type="file"] { display:none; }
 
-  #bodyBlocks { position:absolute; width:100%; overflow-y:auto; display:flex; flex-direction:column; top:0; bottom:0; }
+  #bodyBlocks { position:absolute; width:100%; overflow-y:auto; display:flex; flex-direction:column; top:0; bottom:0; padding:5px; }
 
   .controls { display:flex; justify-content:space-between; align-items:center; padding:4px 8px; background: rgba(0,0,0,0.5); color:#fff; font-size:14px; }
+
   .add-btn { padding:5px 10px; background:#2196F3; border:none; border-radius:4px; color:#fff; cursor:pointer; }
 
   .horizontal-scroll { display:flex; overflow-x:auto; scroll-snap-type:x mandatory; -webkit-overflow-scrolling: touch; }
   .horizontal-scroll img { width:100vw; height:auto; flex-shrink:0; scroll-snap-align:start; }
+
+  /* отдельная кнопка для добавления блока сбоку */
+  .side-add-btn {
+    position: absolute;
+    right: 5px;
+    top: 5px;
+    padding: 4px 8px;
+    background:#0f0;
+    border:none;
+    border-radius:4px;
+    color:#000;
+    cursor:pointer;
+    z-index:10;
+  }
 </style>
 </head>
 <body>
@@ -35,9 +50,7 @@
 
 <!-- BODY -->
 <div id="bodyBlocks">
-  <div class="controls">
-    <button class="add-btn" id="addBodyBlockBtn">Добавить блок</button>
-  </div>
+  <button class="add-btn" id="addBodyBlockBtn">Добавить блок</button>
 </div>
 
 <!-- FOOTER -->
@@ -70,10 +83,8 @@ function setupBlock(block, fileInput, fixCheckbox, controlsDiv, pos='') {
     reader.onload=e=>block.querySelector('img').src=e.target.result;
     reader.readAsDataURL(file);
 
-    // скрываем контролы после выбора фото
-    controlsDiv.style.display='none';
+    controlsDiv.style.display='none'; // скрываем панель после загрузки
 
-    // закрепляем
     if(fixCheckbox.checked){
       block.style.position='fixed';
       block.style[pos]='0';
@@ -102,15 +113,20 @@ function adjustBody(){
   bodyDiv.style.bottom=bottom+'px';
 }
 
-// header/footer
+// Header/Footer
 setupBlock(document.getElementById('headerBlock'),document.getElementById('headerUpload'),document.getElementById('headerFix'),document.getElementById('headerControls'),'top');
 setupBlock(document.getElementById('footerBlock'),document.getElementById('footerUpload'),document.getElementById('footerFix'),document.getElementById('footerControls'),'bottom');
 
 // Добавление блоков в body
 document.getElementById('addBodyBlockBtn').addEventListener('click',()=>{
+  addNewBodyBlock();
+});
+
+function addNewBodyBlock(){
   const bodyDiv=document.getElementById('bodyBlocks');
   const newBlock=document.createElement('div');
   newBlock.classList.add('block');
+  newBlock.style.position='relative';
   newBlock.innerHTML=`
     <div class="controls">
       <button class="add-btn">Добавить фото (горизонтальный скрол)</button>
@@ -118,6 +134,17 @@ document.getElementById('addBodyBlockBtn').addEventListener('click',()=>{
     <div class="horizontal-scroll"></div>
     <input type="file" accept="image/*" multiple>
   `;
+
+  // добавляем кнопку сбоку блока
+  const sideBtn=document.createElement('button');
+  sideBtn.classList.add('side-add-btn');
+  sideBtn.textContent='+';
+  sideBtn.addEventListener('click',(e)=>{
+    e.stopPropagation();
+    addNewBodyBlock();
+  });
+  newBlock.appendChild(sideBtn);
+
   bodyDiv.appendChild(newBlock);
 
   const fileInput=newBlock.querySelector('input[type=file]');
@@ -138,9 +165,12 @@ document.getElementById('addBodyBlockBtn').addEventListener('click',()=>{
 
     const firstImg=scrollDiv.querySelector('img');
     firstImg.onload=()=> newBlock.style.height=newBlock.clientWidth*(firstImg.naturalHeight/firstImg.naturalWidth)+'px';
+
+    // после загрузки фото скрываем контролы блока
     newBlock.querySelector('.controls').style.display='none';
+    sideBtn.style.display='none';
   });
-});
+}
 </script>
 
 </body>
