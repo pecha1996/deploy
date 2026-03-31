@@ -8,59 +8,34 @@
   <meta name="theme-color" content="#000000">
   <style>
     * {
-      box-sizing: border-box;
       margin: 0;
       padding: 0;
+      box-sizing: border-box;
     }
 
-    body, html {
-      height: 100%;
+    html, body {
+      width: 100%;
       font-family: Arial, sans-serif;
+      background-color: #000;
     }
 
     body {
       display: flex;
       flex-direction: column;
-      min-height: 100vh;
+      align-items: center;
     }
 
-    header, main, footer {
+    .block {
       position: relative;
       width: 100%;
       overflow: hidden;
-    }
-
-    header {
-      height: 25vh;
-      background-color: #111;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    main {
-      height: 50vh;
-      background-color: #222;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    footer {
-      height: 25vh;
-      background-color: #111;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      margin-bottom: -4px; /* убирает полоску между блоками на некоторых экранах */
     }
 
     img.preview-img {
-      position: absolute;
-      top: 0; left: 0;
       width: 100%;
-      height: 100%;
-      object-fit: cover;
-      z-index: 0;
+      height: auto;
+      display: block;
     }
 
     .upload-btn {
@@ -73,15 +48,13 @@
       height: 50px;
       border-radius: 50%;
       display: flex;
-      align-items: center;
       justify-content: center;
+      align-items: center;
       cursor: pointer;
       user-select: none;
+      top: 10px;
+      right: 10px;
     }
-
-    #headerBtn { top: 10px; right: 10px; }
-    #bodyBtn { top: 10px; right: 10px; }
-    #footerBtn { top: 10px; right: 10px; }
 
     input[type="file"] { display: none; }
 
@@ -104,26 +77,26 @@
 <body>
 
   <!-- HEADER -->
-  <header>
+  <div class="block" id="headerBlock">
     <img id="headerPreview" class="preview-img" alt="Header Фото">
-    <label id="headerBtn" class="upload-btn" for="headerUpload">+</label>
+    <label class="upload-btn" for="headerUpload">+</label>
     <input type="file" id="headerUpload" accept="image/*">
-  </header>
+  </div>
 
   <!-- BODY -->
-  <main>
+  <div class="block" id="bodyBlock">
     <img id="bodyPreview" class="preview-img" alt="Body Фото">
-    <label id="bodyBtn" class="upload-btn" for="bodyUpload">+</label>
+    <label class="upload-btn" for="bodyUpload">+</label>
     <input type="file" id="bodyUpload" accept="image/*">
     <button id="installBtn">Установить приложение</button>
-  </main>
+  </div>
 
   <!-- FOOTER -->
-  <footer>
+  <div class="block" id="footerBlock">
     <img id="footerPreview" class="preview-img" alt="Footer Фото">
-    <label id="footerBtn" class="upload-btn" for="footerUpload">+</label>
+    <label class="upload-btn" for="footerUpload">+</label>
     <input type="file" id="footerUpload" accept="image/*">
-  </footer>
+  </div>
 
   <script>
     // --- PWA установка ---
@@ -145,26 +118,34 @@
         .then(() => console.log('Service Worker registered'));
     }
 
-    // --- Загрузка фото ---
-    function setupUpload(inputId, previewId) {
+    // --- Подгонка блока под загруженное изображение ---
+    function setupUpload(inputId, previewId, blockId) {
       const input = document.getElementById(inputId);
       const preview = document.getElementById(previewId);
+      const block = document.getElementById(blockId);
 
       input.addEventListener('change', () => {
         const file = input.files[0];
         if (!file) return;
+
         const reader = new FileReader();
         reader.onload = (e) => {
           preview.src = e.target.result;
         };
         reader.readAsDataURL(file);
+
+        // Как только картинка загрузилась, подгоняем блок по её высоте
+        preview.onload = () => {
+          const aspectRatio = preview.naturalHeight / preview.naturalWidth;
+          const width = block.clientWidth;
+          block.style.height = (width * aspectRatio) + 'px';
+        };
       });
     }
 
-    setupUpload('headerUpload', 'headerPreview');
-    setupUpload('bodyUpload', 'bodyPreview');
-    setupUpload('footerUpload', 'footerPreview');
+    setupUpload('headerUpload', 'headerPreview', 'headerBlock');
+    setupUpload('bodyUpload', 'bodyPreview', 'bodyBlock');
+    setupUpload('footerUpload', 'footerPreview', 'footerBlock');
   </script>
-
 </body>
 </html>
