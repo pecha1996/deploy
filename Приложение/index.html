@@ -30,6 +30,7 @@
       width: 100%;
       overflow: hidden;
       margin-bottom: -4px; /* убирает полоску между блоками на некоторых экранах */
+      cursor: pointer; /* показываем, что блок кликабелен */
     }
 
     img.preview-img {
@@ -38,40 +39,7 @@
       display: block;
     }
 
-    .upload-btn {
-      position: absolute;
-      z-index: 1;
-      background: rgba(0,0,0,0.5);
-      color: #fff;
-      font-size: 32px;
-      width: 50px;
-      height: 50px;
-      border-radius: 50%;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      cursor: pointer;
-      user-select: none;
-      top: 10px;
-      right: 10px;
-    }
-
     input[type="file"] { display: none; }
-
-    #installBtn {
-      position: absolute;
-      bottom: 10px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 2;
-      padding: 10px 20px;
-      font-size: 16px;
-      background: #2196F3;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      color: #fff;
-    }
   </style>
 </head>
 <body>
@@ -79,51 +47,36 @@
   <!-- HEADER -->
   <div class="block" id="headerBlock">
     <img id="headerPreview" class="preview-img" alt="Header Фото">
-    <label class="upload-btn" for="headerUpload">+</label>
     <input type="file" id="headerUpload" accept="image/*">
   </div>
 
   <!-- BODY -->
   <div class="block" id="bodyBlock">
     <img id="bodyPreview" class="preview-img" alt="Body Фото">
-    <label class="upload-btn" for="bodyUpload">+</label>
     <input type="file" id="bodyUpload" accept="image/*">
-    <button id="installBtn">Установить приложение</button>
   </div>
 
   <!-- FOOTER -->
   <div class="block" id="footerBlock">
     <img id="footerPreview" class="preview-img" alt="Footer Фото">
-    <label class="upload-btn" for="footerUpload">+</label>
     <input type="file" id="footerUpload" accept="image/*">
   </div>
 
   <script>
-    // --- PWA установка ---
-    let deferredPrompt;
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      deferredPrompt = e;
-      document.getElementById('installBtn').style.display = 'inline-block';
-    });
-
-    document.getElementById('installBtn').addEventListener('click', async () => {
-      if (!deferredPrompt) return;
-      deferredPrompt.prompt();
-      deferredPrompt = null;
-    });
-
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('service-worker.js')
         .then(() => console.log('Service Worker registered'));
     }
 
-    // --- Подгонка блока под загруженное изображение ---
-    function setupUpload(inputId, previewId, blockId) {
+    function setupUpload(blockId, inputId, previewId) {
+      const block = document.getElementById(blockId);
       const input = document.getElementById(inputId);
       const preview = document.getElementById(previewId);
-      const block = document.getElementById(blockId);
 
+      // Тап по блоку открывает выбор файла
+      block.addEventListener('click', () => input.click());
+
+      // Загрузка фото
       input.addEventListener('change', () => {
         const file = input.files[0];
         if (!file) return;
@@ -134,7 +87,7 @@
         };
         reader.readAsDataURL(file);
 
-        // Как только картинка загрузилась, подгоняем блок по её высоте
+        // Подгоняем блок под размер изображения
         preview.onload = () => {
           const aspectRatio = preview.naturalHeight / preview.naturalWidth;
           const width = block.clientWidth;
@@ -143,9 +96,9 @@
       });
     }
 
-    setupUpload('headerUpload', 'headerPreview', 'headerBlock');
-    setupUpload('bodyUpload', 'bodyPreview', 'bodyBlock');
-    setupUpload('footerUpload', 'footerPreview', 'footerBlock');
+    setupUpload('headerBlock', 'headerUpload', 'headerPreview');
+    setupUpload('bodyBlock', 'bodyUpload', 'bodyPreview');
+    setupUpload('footerBlock', 'footerUpload', 'footerPreview');
   </script>
 </body>
 </html>
