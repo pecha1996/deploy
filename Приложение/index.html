@@ -12,7 +12,7 @@ body { margin:0; font-family: Arial; background:#111; color:#fff; -webkit-overfl
 #header, #footer {
   display:flex; flex-direction:column; align-items:center; width:100vw;
   justify-content:center; overflow:hidden; background:#222;
-  min-height:150px; /* увеличенная зона для тапа перед загрузкой */
+  min-height:150px; /* удобная зона для тапа перед загрузкой */
 }
 #header.fixed { position:fixed; top:0; z-index:9999; }
 #footer.fixed { position:fixed; bottom:0; z-index:9999; }
@@ -53,7 +53,7 @@ body { margin:0; font-family: Arial; background:#111; color:#fff; -webkit-overfl
 <script>
 let currentTarget = document.getElementById('body');
 
-// Функция для обновления цвета status bar
+// Обновление цвета status bar под цвет header
 function updateThemeColorFromHeader() {
   const header = document.getElementById('header');
   const computedColor = window.getComputedStyle(header).backgroundColor;
@@ -61,7 +61,7 @@ function updateThemeColorFromHeader() {
   metaTag.setAttribute('content', computedColor);
 }
 
-// Добавление изображения
+// Добавление изображения с подгонкой под ширину экрана
 function addImageBlock(target){
   const fileInput = document.createElement('input');
   fileInput.type='file'; fileInput.accept='image/*';
@@ -72,12 +72,16 @@ function addImageBlock(target){
     if(target.id==='header'||target.id==='footer'){
       target.innerHTML=''; // убираем текст
       target.appendChild(img);
-      // Подгоняем высоту под изображение
+
       img.onload = ()=>{
-        target.style.height = img.height + 'px';
+        // Подгоняем под ширину экрана с сохранением пропорций
+        const screenWidth = window.innerWidth;
+        const ratio = img.naturalHeight / img.naturalWidth;
+        target.style.height = (screenWidth * ratio) + 'px';
+        img.style.width = '100%';
+        img.style.height = '100%';
         updateBodyPadding();
-        // Обновляем цвет верхней системной строки
-        updateThemeColorFromHeader();
+        updateThemeColorFromHeader(); // обновляем верхнюю системную строку
       }
     } else {
       const block=document.createElement('div');
