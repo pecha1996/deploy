@@ -7,16 +7,17 @@
 <style>
 body { margin:0; font-family: Arial; background:#111; color:#fff; overflow-x:hidden; }
 #app { display:flex; flex-direction:column; width:100vw; }
-.block { width:100vw; margin:0; padding:0; }
-#header, #footer { background:#222; display:flex; flex-direction:column; align-items:center; width:100vw; }
+.block { width:100vw; margin:0; padding:0; position:relative; }
+#header, #footer { background:#222; display:flex; flex-direction:column; align-items:center; width:100vw; min-height:80px; justify-content:center; }
 #body { display:flex; flex-direction:column; }
 .block img { width:100vw; display:block; object-fit:cover; }
 .block textarea { width:100vw; min-height:100px; background:#333; color:#fff; border:none; padding:10px; resize:vertical; box-sizing:border-box; }
 #control-panel {
   position:fixed; right:10px; top:10px; background:rgba(0,0,0,0.7); 
-  padding:10px; display:flex; flex-direction:column; gap:5px; z-index:10000; 
-  border-radius:8px; pointer-events:auto;
+  padding:10px; display:flex; flex-direction:column; gap:5px; z-index:10000; border-radius:8px;
+  pointer-events:auto; transition: transform 0.3s;
 }
+#control-panel.hidden { transform: translateX(120%); }
 #control-panel button { padding:5px 10px; cursor:pointer; }
 #control-panel label { font-size:14px; display:flex; align-items:center; gap:5px; cursor:pointer; }
 .drag-handle { cursor:grab; padding:2px 5px; background:#444; margin-bottom:5px; border-radius:4px; align-self:flex-start; }
@@ -29,9 +30,9 @@ body { margin:0; font-family: Arial; background:#111; color:#fff; overflow-x:hid
 <body>
 
 <div id="app">
-  <div id="header" class="block">Header (кликните, чтобы редактировать)</div>
+  <div id="header" class="block">Header (тапните для редактирования)</div>
   <div id="body" class="block-container"></div>
-  <div id="footer" class="block">Footer (кликните, чтобы редактировать)</div>
+  <div id="footer" class="block">Footer (тапните для редактирования)</div>
 </div>
 
 <div id="control-panel">
@@ -46,7 +47,7 @@ body { margin:0; font-family: Arial; background:#111; color:#fff; overflow-x:hid
 <script>
 let currentTarget = document.getElementById('body');
 
-// Добавление изображений
+// Функция добавления изображений
 function addImageBlock(target) {
   const fileInput = document.createElement('input');
   fileInput.type = 'file';
@@ -74,14 +75,13 @@ function addCodeBlock(target) {
   target.appendChild(block);
 }
 
-// Добавление горизонтального скролла
+// Горизонтальный скролл
 function addHorizontalScrollBlock(target) {
   const block = document.createElement('div');
   block.classList.add('block', 'horizontal-scroll');
   block.appendChild(createDragHandle());
-
-  const count = parseInt(prompt('Сколько изображений в горизонтальный блок?', 3)) || 3;
-  for(let i=0; i<count; i++){
+  const count = parseInt(prompt('Сколько изображений в горизонтальный блок?',3)) || 3;
+  for(let i=0;i<count;i++){
     const url = prompt(`URL изображения ${i+1}`);
     if(url){
       const img = document.createElement('img');
@@ -101,7 +101,7 @@ function createDragHandle() {
 }
 
 // Закрепление header/footer
-function toggleFix(section) {
+function toggleFix(section){
   const el = document.getElementById(section);
   if(document.getElementById('fix-' + section).checked){
     el.style.position = 'sticky';
@@ -121,23 +121,32 @@ document.getElementById('header').onclick = () => currentTarget = document.getEl
 document.getElementById('body').onclick = () => currentTarget = document.getElementById('body');
 document.getElementById('footer').onclick = () => currentTarget = document.getElementById('footer');
 
-// Drag & Drop для body
+// Drag & Drop
 Sortable.create(document.getElementById('body'), {
   handle: '.drag-handle',
   animation: 150
 });
 
-// Сохранение / загрузка проекта
-function saveProject() {
-  localStorage.setItem('appLayout', document.getElementById('app').innerHTML);
-}
-function loadProject() {
-  const layout = localStorage.getItem('appLayout');
-  if(layout) document.getElementById('app').innerHTML = layout;
-}
+// Панель скрытия/показа двойным тапом
+let tapCount = 0;
+let tapTimeout;
+document.body.addEventListener('click', () => {
+  tapCount++;
+  clearTimeout(tapTimeout);
+  tapTimeout = setTimeout(() => {
+    if(tapCount>=2){
+      document.getElementById('control-panel').classList.toggle('hidden');
+    }
+    tapCount=0;
+  },300);
+});
+
+// Сохранение / загрузка
+function saveProject() { localStorage.setItem('appLayout', document.getElementById('app').innerHTML); }
+function loadProject() { const layout = localStorage.getItem('appLayout'); if(layout) document.getElementById('app').innerHTML = layout; }
 window.onload = loadProject;
 window.onbeforeunload = saveProject;
-
 </script>
+
 </body>
 </html>
