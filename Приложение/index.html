@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Конструктор приложений</title>
+<meta name="theme-color" content="#222" id="themeColorMeta">
 <style>
 body { margin:0; font-family: Arial; background:#111; color:#fff; -webkit-overflow-scrolling: touch; }
 #app { display:flex; flex-direction:column; width:100vw; height:100vh; overflow:hidden; }
@@ -11,6 +12,7 @@ body { margin:0; font-family: Arial; background:#111; color:#fff; -webkit-overfl
 #header, #footer {
   display:flex; flex-direction:column; align-items:center; width:100vw;
   justify-content:center; overflow:hidden; background:#222;
+  min-height:150px; /* увеличенная зона для тапа перед загрузкой */
 }
 #header.fixed { position:fixed; top:0; z-index:9999; }
 #footer.fixed { position:fixed; bottom:0; z-index:9999; }
@@ -51,6 +53,14 @@ body { margin:0; font-family: Arial; background:#111; color:#fff; -webkit-overfl
 <script>
 let currentTarget = document.getElementById('body');
 
+// Функция для обновления цвета status bar
+function updateThemeColorFromHeader() {
+  const header = document.getElementById('header');
+  const computedColor = window.getComputedStyle(header).backgroundColor;
+  const metaTag = document.getElementById('themeColorMeta');
+  metaTag.setAttribute('content', computedColor);
+}
+
 // Добавление изображения
 function addImageBlock(target){
   const fileInput = document.createElement('input');
@@ -62,10 +72,12 @@ function addImageBlock(target){
     if(target.id==='header'||target.id==='footer'){
       target.innerHTML=''; // убираем текст
       target.appendChild(img);
-      // подгоняем размер под картинку
+      // Подгоняем высоту под изображение
       img.onload = ()=>{
         target.style.height = img.height + 'px';
         updateBodyPadding();
+        // Обновляем цвет верхней системной строки
+        updateThemeColorFromHeader();
       }
     } else {
       const block=document.createElement('div');
