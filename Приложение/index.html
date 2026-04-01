@@ -5,13 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Конструктор приложений</title>
 <style>
-body { margin:0; font-family: Arial; background:#111; color:#fff; overflow-x:hidden; }
-#app { display:flex; flex-direction:column; width:100vw; min-height:100vh; }
+body { margin:0; font-family: Arial; background:#111; color:#fff; -webkit-overflow-scrolling: touch; }
+#app { display:flex; flex-direction:column; width:100vw; height:100vh; }
 .block { width:100vw; margin:0; padding:0; position:relative; }
-#header, #footer { background:#222; display:flex; flex-direction:column; align-items:center; width:100vw; min-height:80px; justify-content:center; }
-#header.fixed { position:sticky; top:0; z-index:999; }
-#footer.fixed { position:sticky; bottom:0; z-index:999; }
-#body { display:flex; flex-direction:column; }
+#header, #footer { display:flex; flex-direction:column; align-items:center; width:100vw; justify-content:center; overflow:hidden; background:#222; }
+#header.fixed { position:fixed; top:0; z-index:9999; }
+#footer.fixed { position:fixed; bottom:0; z-index:9999; }
+#body { flex:1; overflow-y:auto; -webkit-overflow-scrolling: touch; }
 .block img { width:100vw; display:block; object-fit:cover; }
 .block textarea { width:100vw; min-height:100px; background:#333; color:#fff; border:none; padding:10px; resize:vertical; box-sizing:border-box; }
 #control-panel {
@@ -48,95 +48,94 @@ body { margin:0; font-family: Arial; background:#111; color:#fff; overflow-x:hid
 <script>
 let currentTarget = document.getElementById('body');
 
-// Функция добавления изображений
-function addImageBlock(target) {
+// Добавление изображения
+function addImageBlock(target){
   const fileInput = document.createElement('input');
-  fileInput.type = 'file';
-  fileInput.accept = 'image/*';
+  fileInput.type='file'; fileInput.accept='image/*';
   fileInput.onchange = e => {
     const img = document.createElement('img');
     img.src = URL.createObjectURL(e.target.files[0]);
-
-    if(target.id === 'header' || target.id === 'footer'){
-      target.innerHTML = ''; // Убираем текст и стрелки
+    if(target.id==='header'||target.id==='footer'){
+      target.innerHTML=''; // убираем текст
       target.appendChild(img);
+      // подгоняем размер под картинку
+      img.onload = ()=>{ target.style.height = img.height + 'px'; }
     } else {
-      const block = document.createElement('div');
+      const block=document.createElement('div');
       block.classList.add('block');
       block.appendChild(img);
       target.appendChild(block);
     }
-  };
+  }
   fileInput.click();
 }
 
 // Добавление кода
-function addCodeBlock(target) {
-  const block = document.createElement('div');
-  block.classList.add('block');
-  const textarea = document.createElement('textarea');
-  textarea.placeholder = 'Вставьте HTML/JS код';
+function addCodeBlock(target){
+  const block=document.createElement('div'); block.classList.add('block');
+  const textarea=document.createElement('textarea');
+  textarea.placeholder='Вставьте HTML/JS код';
   block.appendChild(textarea);
   target.appendChild(block);
 }
 
 // Горизонтальный скролл
-function addHorizontalScrollBlock(target) {
-  const block = document.createElement('div');
-  block.classList.add('block', 'horizontal-scroll');
-  const count = parseInt(prompt('Сколько изображений в горизонтальный блок?',3)) || 3;
+function addHorizontalScrollBlock(target){
+  const block=document.createElement('div');
+  block.classList.add('block','horizontal-scroll');
+  const count = parseInt(prompt('Сколько изображений?',3))||3;
   for(let i=0;i<count;i++){
-    const url = prompt(`URL изображения ${i+1}`);
-    if(url){
-      const img = document.createElement('img');
-      img.src = url;
-      block.appendChild(img);
-    }
+    const url=prompt(`URL изображения ${i+1}`);
+    if(url){ const img=document.createElement('img'); img.src=url; block.appendChild(img); }
   }
   target.appendChild(block);
 }
 
 // Закрепление header/footer
 function toggleFix(section){
-  const el = document.getElementById(section);
-  if(document.getElementById('fix-' + section).checked){
-    el.classList.add('fixed');
+  const el=document.getElementById(section);
+  if(document.getElementById('fix-'+section).checked){
+    el.style.position='fixed';
+    el.style.left='0'; el.style.width='100vw'; el.style.zIndex=9999;
+    if(section==='header') el.style.top='0';
+    if(section==='footer') el.style.bottom='0';
   } else {
-    el.classList.remove('fixed');
+    el.style.position='relative';
+    el.style.top='auto'; el.style.bottom='auto'; el.style.zIndex='auto';
   }
+
+  // корректируем body
+  const headerHeight = document.getElementById('header').offsetHeight;
+  const footerHeight = document.getElementById('footer').offsetHeight;
+  const body=document.getElementById('body');
+  body.style.paddingTop=document.getElementById('fix-header').checked ? headerHeight+'px':'0';
+  body.style.paddingBottom=document.getElementById('fix-footer').checked ? footerHeight+'px':'0';
 }
 
 // Выбор текущего блока
-document.getElementById('header').onclick = () => currentTarget = document.getElementById('header');
-document.getElementById('body').onclick = () => currentTarget = document.getElementById('body');
-document.getElementById('footer').onclick = () => currentTarget = document.getElementById('footer');
+document.getElementById('header').onclick=()=>currentTarget=document.getElementById('header');
+document.getElementById('body').onclick=()=>currentTarget=document.getElementById('body');
+document.getElementById('footer').onclick=()=>currentTarget=document.getElementById('footer');
 
 // Drag & Drop для body
-Sortable.create(document.getElementById('body'), {
-  handle: '.drag-handle',
-  animation: 150
-});
+Sortable.create(document.getElementById('body'), { handle:'.drag-handle', animation:150 });
 
 // Панель скрытия/показа двойным тапом
-let tapCount = 0;
-let tapTimeout;
-document.body.addEventListener('click', () => {
+let tapCount=0, tapTimeout;
+document.body.addEventListener('click',()=>{
   tapCount++;
   clearTimeout(tapTimeout);
-  tapTimeout = setTimeout(() => {
-    if(tapCount>=2){
-      document.getElementById('control-panel').classList.toggle('hidden');
-    }
+  tapTimeout=setTimeout(()=>{
+    if(tapCount>=2){ document.getElementById('control-panel').classList.toggle('hidden'); }
     tapCount=0;
   },300);
 });
 
 // Сохранение / загрузка
-function saveProject() { localStorage.setItem('appLayout', document.getElementById('app').innerHTML); }
-function loadProject() { const layout = localStorage.getItem('appLayout'); if(layout) document.getElementById('app').innerHTML = layout; }
-window.onload = loadProject;
-window.onbeforeunload = saveProject;
+function saveProject(){ localStorage.setItem('appLayout',document.getElementById('app').innerHTML); }
+function loadProject(){ const layout=localStorage.getItem('appLayout'); if(layout) document.getElementById('app').innerHTML=layout; }
+window.onload=loadProject;
+window.onbeforeunload=saveProject;
 </script>
-
 </body>
 </html>
