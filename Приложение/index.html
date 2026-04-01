@@ -60,12 +60,10 @@ function updateThemeColorFromHeader() {
   metaTag.setAttribute('content', computedColor);
 }
 
-// Добавление изображения с подгонкой по **высоте изображения**
+// Добавление изображения
 function addImageBlock(target){
   const fileInput = document.createElement('input');
-  fileInput.type='file'; 
-  fileInput.accept='image/*';
-  
+  fileInput.type='file'; fileInput.accept='image/*';
   fileInput.onchange = e => {
     const img = document.createElement('img');
     img.src = URL.createObjectURL(e.target.files[0]);
@@ -73,23 +71,19 @@ function addImageBlock(target){
     if(target.id==='header'||target.id==='footer'){
       target.innerHTML=''; // убираем текст
       target.appendChild(img);
-
-      img.onload = () => {
-        // Высота блока = натуральной высоте изображения
-        target.style.height = img.naturalHeight + 'px';
-        img.style.width = '100%';
-        img.style.height = '100%';
+      // подгоняем размер под картинку
+      img.onload = ()=>{
+        target.style.height = img.height + 'px';
         updateBodyPadding();
-        updateThemeColorFromHeader(); // обновляем верхнюю системную строку
+        updateThemeColorFromHeader(); // обновляем цвет зоны часов
       }
     } else {
-      const block = document.createElement('div');
+      const block=document.createElement('div');
       block.classList.add('block');
       block.appendChild(img);
       target.appendChild(block);
     }
   }
-
   fileInput.click();
 }
 
