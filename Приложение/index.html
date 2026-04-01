@@ -87,6 +87,7 @@
       bottom: env(safe-area-inset-bottom, 0px);
       left: 0;
       width: 100vw;
+      height: auto;
       z-index: 9999;
       padding-bottom: env(safe-area-inset-bottom, 0px);
     }
@@ -214,9 +215,10 @@
 
     .horizontal-scroll img {
       flex-shrink: 0;
-      width: auto;
+      width: auto !important;
       max-width: none;
       height: auto;
+      object-fit: contain;
       scroll-snap-align: start;
     }
 
@@ -243,7 +245,7 @@
     #header.has-image img,
     #footer.has-image img {
       width: 100%;
-      height: 100%;
+      height: auto;
       object-fit: cover;
     }
 
@@ -529,6 +531,10 @@
           const img = document.createElement('img');
           img.src = dataUrl;
           img.alt = '';
+          img.style.width = 'auto';
+          img.style.height = 'auto';
+          img.style.maxWidth = 'none';
+          img.style.objectFit = 'contain';
           img.style.visibility = 'hidden';
           img.onload = () => {
             img.style.visibility = 'visible';
