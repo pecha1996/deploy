@@ -6,9 +6,11 @@
 <title>Конструктор приложений</title>
 <style>
 body { margin:0; font-family: Arial; background:#111; color:#fff; overflow-x:hidden; }
-#app { display:flex; flex-direction:column; width:100vw; }
+#app { display:flex; flex-direction:column; width:100vw; min-height:100vh; }
 .block { width:100vw; margin:0; padding:0; position:relative; }
 #header, #footer { background:#222; display:flex; flex-direction:column; align-items:center; width:100vw; min-height:80px; justify-content:center; }
+#header.fixed { position:sticky; top:0; z-index:999; }
+#footer.fixed { position:sticky; bottom:0; z-index:999; }
 #body { display:flex; flex-direction:column; }
 .block img { width:100vw; display:block; object-fit:cover; }
 .block textarea { width:100vw; min-height:100px; background:#333; color:#fff; border:none; padding:10px; resize:vertical; box-sizing:border-box; }
@@ -20,7 +22,6 @@ body { margin:0; font-family: Arial; background:#111; color:#fff; overflow-x:hid
 #control-panel.hidden { transform: translateX(120%); }
 #control-panel button { padding:5px 10px; cursor:pointer; }
 #control-panel label { font-size:14px; display:flex; align-items:center; gap:5px; cursor:pointer; }
-.drag-handle { cursor:grab; padding:2px 5px; background:#444; margin-bottom:5px; border-radius:4px; align-self:flex-start; }
 .horizontal-scroll { display:flex; overflow-x:auto; gap:0; scroll-snap-type: x mandatory; }
 .horizontal-scroll img { flex-shrink:0; width:100vw; scroll-snap-align:start; }
 .horizontal-scroll::-webkit-scrollbar { height:8px; }
@@ -55,11 +56,16 @@ function addImageBlock(target) {
   fileInput.onchange = e => {
     const img = document.createElement('img');
     img.src = URL.createObjectURL(e.target.files[0]);
-    const block = document.createElement('div');
-    block.classList.add('block');
-    block.appendChild(createDragHandle());
-    block.appendChild(img);
-    target.appendChild(block);
+
+    if(target.id === 'header' || target.id === 'footer'){
+      target.innerHTML = ''; // Убираем текст и стрелки
+      target.appendChild(img);
+    } else {
+      const block = document.createElement('div');
+      block.classList.add('block');
+      block.appendChild(img);
+      target.appendChild(block);
+    }
   };
   fileInput.click();
 }
@@ -68,7 +74,6 @@ function addImageBlock(target) {
 function addCodeBlock(target) {
   const block = document.createElement('div');
   block.classList.add('block');
-  block.appendChild(createDragHandle());
   const textarea = document.createElement('textarea');
   textarea.placeholder = 'Вставьте HTML/JS код';
   block.appendChild(textarea);
@@ -79,7 +84,6 @@ function addCodeBlock(target) {
 function addHorizontalScrollBlock(target) {
   const block = document.createElement('div');
   block.classList.add('block', 'horizontal-scroll');
-  block.appendChild(createDragHandle());
   const count = parseInt(prompt('Сколько изображений в горизонтальный блок?',3)) || 3;
   for(let i=0;i<count;i++){
     const url = prompt(`URL изображения ${i+1}`);
@@ -92,27 +96,13 @@ function addHorizontalScrollBlock(target) {
   target.appendChild(block);
 }
 
-// Drag handle
-function createDragHandle() {
-  const handle = document.createElement('div');
-  handle.className = 'drag-handle';
-  handle.innerText = '⇅';
-  return handle;
-}
-
 // Закрепление header/footer
 function toggleFix(section){
   const el = document.getElementById(section);
   if(document.getElementById('fix-' + section).checked){
-    el.style.position = 'sticky';
-    el.style.top = section==='header'? '0' : 'auto';
-    el.style.bottom = section==='footer'? '0' : 'auto';
-    el.style.zIndex = 999;
+    el.classList.add('fixed');
   } else {
-    el.style.position = 'relative';
-    el.style.top = 'auto';
-    el.style.bottom = 'auto';
-    el.style.zIndex = 'auto';
+    el.classList.remove('fixed');
   }
 }
 
@@ -121,7 +111,7 @@ document.getElementById('header').onclick = () => currentTarget = document.getEl
 document.getElementById('body').onclick = () => currentTarget = document.getElementById('body');
 document.getElementById('footer').onclick = () => currentTarget = document.getElementById('footer');
 
-// Drag & Drop
+// Drag & Drop для body
 Sortable.create(document.getElementById('body'), {
   handle: '.drag-handle',
   animation: 150
