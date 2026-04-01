@@ -3,127 +3,137 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Моё приложение</title>
+<title>Конструктор приложений</title>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  html, body { width: 100%; font-family: Arial, sans-serif; background: #000; height: 100%; }
-  body { display: flex; flex-direction: column; align-items: center; }
-
-  .block { position: relative; width: 100%; overflow: hidden; cursor: pointer; margin-bottom: -4px; }
-  img.preview-img { width: 100%; height: auto; display: block; }
-  input[type="file"] { display: none; }
-
-  #bodyBlock { position: absolute; top: 0; bottom: 0; width: 100%; overflow-y: auto; }
-
-  /* подсказка закрепления */
-  .fixed-label {
-    position: absolute;
-    bottom: 5px;
-    left: 5px;
-    padding: 2px 5px;
-    background: rgba(0,0,0,0.5);
-    color: #fff;
-    font-size: 12px;
-    border-radius: 4px;
-    z-index: 10;
-  }
+body { margin:0; font-family: Arial; background:#111; color:#fff; overflow-x:hidden; }
+#app { display:flex; flex-direction:column; width:100vw; }
+.block { width:100%; position:relative; margin:0; padding:0; }
+#header, #footer { background:#222; padding:10px; display:flex; flex-direction:column; align-items:center; }
+#body { display:flex; flex-direction:column; }
+.block img { width:100%; display:block; }
+.block textarea { width:100%; min-height:100px; background:#333; color:#fff; border:none; padding:10px; resize:vertical; }
+#control-panel { position:fixed; right:10px; top:10px; background:rgba(0,0,0,0.7); padding:10px; display:flex; flex-direction:column; gap:5px; z-index:1000; border-radius:8px; }
+#control-panel button { padding:5px 10px; cursor:pointer; }
+#control-panel label { font-size:14px; display:flex; align-items:center; gap:5px; cursor:pointer; }
+.drag-handle { cursor:grab; padding:2px 5px; background:#444; margin-bottom:5px; border-radius:4px; align-self:flex-start; }
+.horizontal-scroll { display:flex; overflow-x:auto; gap:0; }
+.horizontal-scroll img { flex-shrink:0; width:100vw; scroll-snap-align:start; }
+.horizontal-scroll::-webkit-scrollbar { height:8px; }
+.horizontal-scroll::-webkit-scrollbar-thumb { background:#555; border-radius:4px; }
 </style>
 </head>
 <body>
 
-<!-- HEADER -->
-<div class="block" id="headerBlock">
-  <img id="headerPreview" class="preview-img" alt="Header Фото">
-  <span class="fixed-label" id="headerLabel">Закрепить</span>
-  <input type="file" id="headerUpload" accept="image/*">
+<div id="app">
+  <div id="header" class="block">Header (кликните, чтобы редактировать)</div>
+  <div id="body" class="block-container"></div>
+  <div id="footer" class="block">Footer (кликните, чтобы редактировать)</div>
 </div>
 
-<!-- BODY -->
-<div class="block" id="bodyBlock">
-  <img id="bodyPreview" class="preview-img" alt="Body Фото">
-  <input type="file" id="bodyUpload" accept="image/*">
+<div id="control-panel">
+  <button onclick="addImageBlock(currentTarget)">Добавить фото</button>
+  <button onclick="addCodeBlock(currentTarget)">Добавить код</button>
+  <button onclick="addHorizontalScrollBlock(currentTarget)">Горизонтальный блок</button>
+  <label><input type="checkbox" id="fix-header" onchange="toggleFix('header')"> Закрепить header</label>
+  <label><input type="checkbox" id="fix-footer" onchange="toggleFix('footer')"> Закрепить footer</label>
 </div>
 
-<!-- FOOTER -->
-<div class="block" id="footerBlock">
-  <img id="footerPreview" class="preview-img" alt="Footer Фото">
-  <span class="fixed-label" id="footerLabel">Закрепить</span>
-  <input type="file" id="footerUpload" accept="image/*">
-</div>
-
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 <script>
-function setupUpload(blockId, inputId, previewId) {
-  const block = document.getElementById(blockId);
-  const input = document.getElementById(inputId);
-  const preview = document.getElementById(previewId);
+let currentTarget = document.getElementById('body');
 
-  // клик по блоку открывает загрузку
-  block.addEventListener('click', (e)=>{
-    // если клик на кнопке закрепления, не открываем файл
-    if(e.target.classList.contains('fixed-label')) return;
-    input.click();
-  });
-
-  input.addEventListener('change', ()=>{
-    const file = input.files[0];
-    if(!file) return;
-    const reader = new FileReader();
-    reader.onload = e=> preview.src = e.target.result;
-    reader.readAsDataURL(file);
-
-    preview.onload = ()=>{
-      const aspectRatio = preview.naturalHeight / preview.naturalWidth;
-      const width = block.clientWidth;
-      block.style.height = (width * aspectRatio)+'px';
-
-      adjustBody();
-    };
-  });
+// Добавление изображений
+function addImageBlock(target) {
+  const fileInput = document.createElement('input');
+  fileInput.type = 'file';
+  fileInput.accept = 'image/*';
+  fileInput.onchange = e => {
+    const img = document.createElement('img');
+    img.src = URL.createObjectURL(e.target.files[0]);
+    const block = document.createElement('div');
+    block.classList.add('block');
+    block.appendChild(createDragHandle());
+    block.appendChild(img);
+    target.appendChild(block);
+  };
+  fileInput.click();
 }
 
-// переключение закрепления
-function setupToggle(blockId, labelId, position) {
-  const block = document.getElementById(blockId);
-  const label = document.getElementById(labelId);
-  let fixed = false;
+// Добавление кода
+function addCodeBlock(target) {
+  const block = document.createElement('div');
+  block.classList.add('block');
+  block.appendChild(createDragHandle());
+  const textarea = document.createElement('textarea');
+  textarea.placeholder = 'Вставьте HTML/JS код';
+  block.appendChild(textarea);
+  target.appendChild(block);
+}
 
-  label.addEventListener('click', (e)=>{
-    e.stopPropagation(); // чтобы не открывалась загрузка
-    fixed = !fixed;
+// Добавление горизонтального скролла
+function addHorizontalScrollBlock(target) {
+  const block = document.createElement('div');
+  block.classList.add('block', 'horizontal-scroll');
+  block.appendChild(createDragHandle());
 
-    if(fixed){
-      block.style.position = 'fixed';
-      block.style[position] = '0';
-      label.textContent = 'Открепить';
-    } else {
-      block.style.position = 'relative';
-      block.style[position] = '';
-      label.textContent = 'Закрепить';
+  const count = parseInt(prompt('Сколько изображений в горизонтальный блок?', 3)) || 3;
+  for(let i=0; i<count; i++){
+    const url = prompt(`URL изображения ${i+1}`);
+    if(url){
+      const img = document.createElement('img');
+      img.src = url;
+      block.appendChild(img);
     }
-    adjustBody();
-  });
+  }
+  target.appendChild(block);
 }
 
-// body подстраивается под header/footer
-function adjustBody(){
-  const body = document.getElementById('bodyBlock');
-  const header = document.getElementById('headerBlock');
-  const footer = document.getElementById('footerBlock');
-
-  let top = (header.style.position==='fixed')? header.clientHeight : 0;
-  let bottom = (footer.style.position==='fixed')? footer.clientHeight : 0;
-
-  body.style.top = top+'px';
-  body.style.bottom = bottom+'px';
+// Drag handle
+function createDragHandle() {
+  const handle = document.createElement('div');
+  handle.className = 'drag-handle';
+  handle.innerText = '⇅';
+  return handle;
 }
 
-setupUpload('headerBlock','headerUpload','headerPreview');
-setupUpload('bodyBlock','bodyUpload','bodyPreview');
-setupUpload('footerBlock','footerUpload','footerPreview');
+// Закрепление header/footer
+function toggleFix(section) {
+  const el = document.getElementById(section);
+  if(document.getElementById('fix-' + section).checked){
+    el.style.position = 'sticky';
+    el.style.top = section==='header'? '0' : 'auto';
+    el.style.bottom = section==='footer'? '0' : 'auto';
+    el.style.zIndex = 999;
+  } else {
+    el.style.position = 'relative';
+    el.style.top = 'auto';
+    el.style.bottom = 'auto';
+    el.style.zIndex = 'auto';
+  }
+}
 
-setupToggle('headerBlock','headerLabel','top');
-setupToggle('footerBlock','footerLabel','bottom');
+// Выбор текущего блока
+document.getElementById('header').onclick = () => currentTarget = document.getElementById('header');
+document.getElementById('body').onclick = () => currentTarget = document.getElementById('body');
+document.getElementById('footer').onclick = () => currentTarget = document.getElementById('footer');
+
+// Drag & Drop для body
+Sortable.create(document.getElementById('body'), {
+  handle: '.drag-handle',
+  animation: 150
+});
+
+// Сохранение / загрузка проекта
+function saveProject() {
+  localStorage.setItem('appLayout', document.getElementById('app').innerHTML);
+}
+function loadProject() {
+  const layout = localStorage.getItem('appLayout');
+  if(layout) document.getElementById('app').innerHTML = layout;
+}
+window.onload = loadProject;
+window.onbeforeunload = saveProject;
+
 </script>
-
 </body>
 </html>
