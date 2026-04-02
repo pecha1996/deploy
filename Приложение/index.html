@@ -53,6 +53,7 @@
 
     .block {
       width: 100vw;
+      min-width: 100vw;
       margin: 0;
       padding: 0;
       position: relative;
@@ -109,6 +110,7 @@
       overflow-y: auto;
       overflow-x: hidden;
       width: 100vw;
+      min-width: 100vw;
       min-height: 0;
     }
 
@@ -161,6 +163,7 @@
 
     .executed-code {
       width: 100%;
+      min-width: 100%;
       max-width: 100vw;
       overflow-x: auto;
       background: transparent;
@@ -326,6 +329,7 @@
     <button type="button" id="reset-layout">Сбросить проект</button>
     <label><input type="checkbox" id="fix-header" /> Закрепить header</label>
     <label><input type="checkbox" id="fix-footer" /> Закрепить footer</label>
+    <label><input type="checkbox" id="enable-privacy-blur" checked /> Блюр в фоне</label>
   </div>
 
   <script>
@@ -334,6 +338,7 @@
     const themeMeta = document.getElementById('themeColorMeta');
     const fixHeader = document.getElementById('fix-header');
     const fixFooter = document.getElementById('fix-footer');
+    const blurToggle = document.getElementById('enable-privacy-blur');
 
     let bodyEl;
     let headerEl;
@@ -346,12 +351,12 @@
 
     function updateThemeColorFromHeader() {
       const computedColor = window.getComputedStyle(headerEl).backgroundColor;
-      themeMeta.setAttribute('content', computedColor || '#222');
+      themeMeta.setAttribute('content', toHexColor(computedColor) || '#222');
     }
 
     function updateBodyPadding() {
-      const headerHeight = headerEl.offsetHeight;
-      const footerHeight = footerEl.offsetHeight;
+      const headerHeight = headerEl.getBoundingClientRect().height;
+      const footerHeight = footerEl.getBoundingClientRect().height;
       bodyEl.style.paddingTop = fixHeader.checked ? headerHeight + 'px' : '0';
       bodyEl.style.paddingBottom = fixFooter.checked ? footerHeight + 'px' : '0';
     }
@@ -561,6 +566,8 @@
           img.style.visibility = 'hidden';
           img.onload = () => {
             img.style.visibility = 'visible';
+            img.style.width = img.naturalWidth + 'px';
+            img.style.height = img.naturalHeight + 'px';
           };
           img.onerror = () => {
             img.remove();
@@ -669,6 +676,7 @@
         appMarkup: app.innerHTML,
         fixHeader: fixHeader.checked,
         fixFooter: fixFooter.checked,
+        blurEnabled: blurToggle.checked,
       };
       localStorage.setItem('appLayoutV2', JSON.stringify(state));
     }
@@ -684,6 +692,7 @@
         }
         fixHeader.checked = Boolean(state.fixHeader);
         fixFooter.checked = Boolean(state.fixFooter);
+        blurToggle.checked = state.blurEnabled !== false;
       } catch (e) {
         console.warn('Не удалось загрузить сохраненный проект', e);
       }
@@ -703,13 +712,8 @@
 
     function setupEventDelegation() {
       document.addEventListener('click', (event) => {
-        const targetRegion = event.target.closest('[data-target]');
-        if (!targetRegion) return;
-
-        const region = targetRegion.getAttribute('data-target');
-        if (region === 'header') currentTarget = headerEl;
-        if (region === 'body') currentTarget = bodyEl;
-        if (region === 'footer') currentTarget = footerEl;
+        const targetRegion = event.target.closest('[data-target=\"body\"]');
+        if (targetRegion) currentTarget = bodyEl;
       });
 
       document.body.addEventListener('click', () => {
@@ -812,14 +816,28 @@
       const reveal = () => document.body.classList.remove('app-obscured');
 
       document.addEventListener('visibilitychange', () => {
+        if (!blurToggle.checked) return;
         if (document.visibilityState === 'hidden') obscure();
         if (document.visibilityState === 'visible') reveal();
       });
 
-      window.addEventListener('blur', obscure);
+      window.addEventListener('blur', () => {
+        if (blurToggle.checked) obscure();
+      });
       window.addEventListener('focus', reveal);
-      window.addEventListener('pagehide', obscure);
+      window.addEventListener('pagehide', () => {
+        if (blurToggle.checked) obscure();
+      });
       window.addEventListener('pageshow', reveal);
+    }
+
+    function toHexColor(color) {
+      const match = (color || '').match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/i);
+      if (!match) return color;
+      const r = Number(match[1]).toString(16).padStart(2, '0');
+      const g = Number(match[2]).toString(16).padStart(2, '0');
+      const b = Number(match[3]).toString(16).padStart(2, '0');
+      return `#${r}${g}${b}`;
     }
 
     function cleanupBrokenOrStaleImages() {
