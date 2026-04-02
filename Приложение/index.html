@@ -369,8 +369,8 @@
     function updateBodyPadding() {
       const headerHeight = headerEl.getBoundingClientRect().height;
       const footerHeight = footerEl.getBoundingClientRect().height;
-      bodyEl.style.paddingTop = headerEl.classList.contains('fixed') ? `${headerHeight}px` : '0';
-      bodyEl.style.paddingBottom = footerEl.classList.contains('fixed') ? `${footerHeight}px` : '0';
+      bodyEl.style.paddingTop = fixHeader.checked ? `${headerHeight}px` : '0';
+      bodyEl.style.paddingBottom = fixFooter.checked ? `${footerHeight}px` : '0';
     }
 
     function updateScrollHostMode() {
@@ -387,7 +387,7 @@
 
     function addDragHandle(parentBlock) {
       return parentBlock;
-    } 
+    }
 
     function addImageBlock(target) {
       target = normalizeTarget(target);
@@ -745,7 +745,6 @@
     }
 
     function runRefresh() {
-      saveProject();
       window.location.reload();
     }
 
@@ -754,7 +753,7 @@
 
       const onTouchStart = (event) => {
         const host = bodyEl;
-        if (host.scrollTop > 2) return;
+        if (host.scrollTop !== 0) return;
         pullState.host = host;
         touchStartY = event.touches[0].clientY;
         isPulling = true;
@@ -763,7 +762,7 @@
       const onTouchMove = (event) => {
         if (!isPulling || !pullState.host) return;
         const delta = event.touches[0].clientY - touchStartY;
-        if (delta > 28 && pullState.host.scrollTop <= 2) {
+        if (delta > 80 && pullState.host.scrollTop === 0) {
           isPulling = false;
           pullState.host = null;
           runRefresh();
@@ -778,9 +777,6 @@
       bodyEl.addEventListener('touchstart', onTouchStart, { passive: true });
       bodyEl.addEventListener('touchmove', onTouchMove, { passive: true });
       bodyEl.addEventListener('touchend', onTouchEnd);
-      app.addEventListener('touchstart', onTouchStart, { passive: true });
-      app.addEventListener('touchmove', onTouchMove, { passive: true });
-      app.addEventListener('touchend', onTouchEnd);
     }
 
     function setupButtons() {
