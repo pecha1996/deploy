@@ -78,7 +78,7 @@
     }
 
     #header.fixed {
-      position: fixed !important;
+      position: sticky !important;
       top: 0;
       left: 0;
       width: 100vw;
@@ -86,7 +86,7 @@
     }
 
     #footer.fixed {
-      position: fixed !important;
+      position: sticky !important;
       bottom: 0;
       left: 0;
       width: 100vw;
@@ -366,15 +366,21 @@
     let isPulling = false;
 
     function updateThemeColorFromHeader() {
+      const headerImg = headerEl.querySelector('img');
+      if (headerImg && headerImg.complete && headerImg.naturalWidth > 0) {
+        const sampled = sampleTopColorFromImage(headerImg);
+        if (sampled) {
+          themeMeta.setAttribute('content', sampled);
+          return;
+        }
+      }
       const computedColor = window.getComputedStyle(headerEl).backgroundColor;
       themeMeta.setAttribute('content', toHexColor(computedColor) || '#222');
     }
 
     function updateBodyPadding() {
-      const headerHeight = headerEl.getBoundingClientRect().height;
-      const footerHeight = footerEl.getBoundingClientRect().height;
-      bodyEl.style.paddingTop = fixHeader.checked ? `${headerHeight}px` : '0';
-      bodyEl.style.paddingBottom = fixFooter.checked ? `${footerHeight}px` : '0';
+      bodyEl.style.paddingTop = '0';
+      bodyEl.style.paddingBottom = '0';
     }
 
     function updateScrollHostMode() {
@@ -584,8 +590,8 @@
           img.onload = () => {
             img.style.visibility = 'visible';
             const dpr = window.devicePixelRatio || 1;
-            img.style.width = 'auto';
-            img.style.height = img.naturalHeight + 'px';
+            img.style.width = img.naturalWidth / dpr + 'px';
+            img.style.height = img.naturalHeight / dpr + 'px';
           };
           img.onerror = () => {
             img.remove();
@@ -638,8 +644,8 @@
             img.onload = () => {
               img.style.visibility = 'visible';
               const dpr = window.devicePixelRatio || 1;
-              img.style.width = 'auto';
-              img.style.height = img.naturalHeight + 'px';
+              img.style.width = img.naturalWidth / dpr + 'px';
+              img.style.height = img.naturalHeight / dpr + 'px';
               saveProject();
             };
             img.onerror = () => {
@@ -767,6 +773,7 @@
     }
 
     function runRefresh() {
+      saveProject();
       window.location.reload();
     }
 
@@ -826,6 +833,7 @@
           const dataUrl = await readFileAsDataUrl(file);
           if (!dataUrl) return;
           faviconEl.setAttribute('href', dataUrl);
+          faviconEl.setAttribute('type', file.type || 'image/png');
           saveProject();
         };
         fileInput.click();
@@ -895,6 +903,32 @@
       const g = Number(match[2]).toString(16).padStart(2, '0');
       const b = Number(match[3]).toString(16).padStart(2, '0');
       return `#${r}${g}${b}`;
+    }
+
+    function sampleTopColorFromImage(img) {
+      try {
+        const canvas = document.createElement('canvas');
+        const w = Math.max(8, Math.min(64, img.naturalWidth));
+        canvas.width = w;
+        canvas.height = 1;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return '';
+        ctx.drawImage(img, 0, 0, w, 1);
+        const { data } = ctx.getImageData(0, 0, w, 1);
+        let r = 0, g = 0, b = 0;
+        for (let i = 0; i < data.length; i += 4) {
+          r += data[i];
+          g += data[i + 1];
+          b += data[i + 2];
+        }
+        const px = data.length / 4;
+        const rr = Math.round(r / px).toString(16).padStart(2, '0');
+        const gg = Math.round(g / px).toString(16).padStart(2, '0');
+        const bb = Math.round(b / px).toString(16).padStart(2, '0');
+        return `#${rr}${gg}${bb}`;
+      } catch {
+        return '';
+      }
     }
 
     function cleanupBrokenOrStaleImages() {
