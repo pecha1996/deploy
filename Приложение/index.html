@@ -21,7 +21,7 @@
     html,
     body {
       height: 100%;
-      overflow: hidden;
+      overflow: auto;
     }
 
     body {
@@ -37,8 +37,10 @@
       display: flex;
       flex-direction: column;
       width: 100vw;
-      height: 100vh;
-      overflow: hidden;
+      min-height: 100vh;
+      height: auto;
+      overflow-y: auto;
+      overflow-x: hidden;
       transition: filter 0.2s ease;
       will-change: filter;
     }
@@ -84,12 +86,12 @@
 
     #footer.fixed {
       position: fixed;
-      bottom: env(safe-area-inset-bottom, 0px);
+      bottom: 0;
       left: 0;
       width: 100vw;
       height: auto;
       z-index: 9999;
-      padding-bottom: env(safe-area-inset-bottom, 0px);
+      padding-bottom: 0;
     }
 
     #header.has-image,
@@ -104,10 +106,8 @@
     }
 
     #body {
-      flex: 1;
-      overflow-y: auto;
-      overflow-x: hidden;
-      -webkit-overflow-scrolling: touch;
+      flex: 1 1 auto;
+      overflow: visible;
       width: 100vw;
       min-height: 0;
     }
@@ -216,10 +216,17 @@
     .horizontal-scroll img {
       flex-shrink: 0;
       width: auto !important;
-      max-width: none;
-      height: auto;
+      max-width: none !important;
+      min-width: 0 !important;
+      min-height: 0 !important;
+      height: auto !important;
       object-fit: contain;
       scroll-snap-align: start;
+    }
+
+    body.ui-hidden .code-actions,
+    body.ui-hidden .block textarea {
+      display: none !important;
     }
 
     .horizontal-scroll::-webkit-scrollbar {
@@ -679,7 +686,10 @@
         tapCount += 1;
         clearTimeout(tapTimeout);
         tapTimeout = setTimeout(() => {
-          if (tapCount >= 2) panelEl.classList.toggle('hidden');
+          if (tapCount >= 2) {
+            panelEl.classList.toggle('hidden');
+            document.body.classList.toggle('ui-hidden');
+          }
           tapCount = 0;
         }, 300);
       });
@@ -691,22 +701,23 @@
     }
 
     function setupPullToRefreshForBody() {
-      bodyEl.addEventListener('touchstart', (event) => {
-        if (bodyEl.scrollTop !== 0) return;
+      const scrollHost = app;
+      scrollHost.addEventListener('touchstart', (event) => {
+        if (scrollHost.scrollTop !== 0) return;
         touchStartY = event.touches[0].clientY;
         isPulling = true;
       }, { passive: true });
 
-      bodyEl.addEventListener('touchmove', (event) => {
+      scrollHost.addEventListener('touchmove', (event) => {
         if (!isPulling) return;
         const delta = event.touches[0].clientY - touchStartY;
-        if (delta > 80 && bodyEl.scrollTop === 0) {
+        if (delta > 80 && scrollHost.scrollTop === 0) {
           isPulling = false;
           runRefresh();
         }
       }, { passive: true });
 
-      bodyEl.addEventListener('touchend', () => {
+      scrollHost.addEventListener('touchend', () => {
         isPulling = false;
       });
     }
