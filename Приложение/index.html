@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Конструктор приложений</title>
   <meta name="theme-color" content="#222" id="themeColorMeta" />
+  <link rel="icon" id="appFavicon" href="" />
   <style>
     :root {
       --panel-bg: rgba(0, 0, 0, 0.72);
@@ -337,6 +338,8 @@
     <button type="button" id="add-button-zone">Зона-кнопка</button>
     <button type="button" id="quick-corridor">Быстрый коридор</button>
     <button type="button" id="set-header-color">Цвет статус-бара</button>
+    <button type="button" id="set-app-icon">Загрузить иконку</button>
+    <button type="button" id="share-link">Создать ссылку</button>
     <button type="button" id="save-now">Сохранить</button>
     <button type="button" id="reset-layout">Сбросить проект</button>
     <label><input type="checkbox" id="fix-header" /> Закрепить header</label>
@@ -348,6 +351,7 @@
     const app = document.getElementById('app');
     const panelEl = document.getElementById('control-panel');
     const themeMeta = document.getElementById('themeColorMeta');
+    const faviconEl = document.getElementById('appFavicon');
     const fixHeader = document.getElementById('fix-header');
     const fixFooter = document.getElementById('fix-footer');
     const blurToggle = document.getElementById('enable-privacy-blur');
@@ -690,6 +694,7 @@
         fixHeader: fixHeader.checked,
         fixFooter: fixFooter.checked,
         blurEnabled: blurToggle.checked,
+        appIcon: faviconEl.getAttribute('href') || '',
       };
       localStorage.setItem('appLayoutV2', JSON.stringify(state));
     }
@@ -706,8 +711,25 @@
         fixHeader.checked = Boolean(state.fixHeader);
         fixFooter.checked = Boolean(state.fixFooter);
         blurToggle.checked = state.blurEnabled !== false;
+        if (state.appIcon) faviconEl.setAttribute('href', state.appIcon);
       } catch (e) {
         console.warn('Не удалось загрузить сохраненный проект', e);
+      }
+    }
+
+    function applyStateFromHash() {
+      if (!location.hash.startsWith('#app=')) return;
+      try {
+        const encoded = location.hash.slice(5);
+        const decoded = decodeURIComponent(atob(encoded));
+        const state = JSON.parse(decoded);
+        if (state.appMarkup) app.innerHTML = state.appMarkup;
+        fixHeader.checked = Boolean(state.fixHeader);
+        fixFooter.checked = Boolean(state.fixFooter);
+        blurToggle.checked = state.blurEnabled !== false;
+        if (state.appIcon) faviconEl.setAttribute('href', state.appIcon);
+      } catch (e) {
+        console.warn('Не удалось применить состояние из ссылки', e);
       }
     }
 
@@ -793,6 +815,31 @@
         headerEl.style.background = input;
         updateThemeColorFromHeader();
         saveProject();
+      });
+      document.getElementById('set-app-icon').addEventListener('click', () => {
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.accept = 'image/*';
+        fileInput.onchange = async (e) => {
+          const file = e.target.files && e.target.files[0];
+          if (!file) return;
+          const dataUrl = await readFileAsDataUrl(file);
+          if (!dataUrl) return;
+          faviconEl.setAttribute('href', dataUrl);
+          saveProject();
+        };
+        fileInput.click();
+      });
+      document.getElementById('share-link').addEventListener('click', () => {
+        const state = localStorage.getItem('appLayoutV2');
+        if (!state) {
+          alert('Сначала сохраните проект.');
+          return;
+        }
+        const encoded = btoa(encodeURIComponent(state));
+        const url = `${location.origin}${location.pathname}#app=${encoded}`;
+        navigator.clipboard?.writeText(url).catch(() => {});
+        prompt('Ссылка готова (скопируйте):', url);
       });
 
       document.getElementById('save-now').addEventListener('click', saveProject);
@@ -884,6 +931,7 @@
 
     function init() {
       loadProject();
+      applyStateFromHash();
       reacquireRefsAfterLoad();
       cleanupBrokenOrStaleImages();
       toggleFix('header');
