@@ -21,7 +21,7 @@
     html,
     body {
       height: 100%;
-      overflow: auto;
+      overflow: hidden;
     }
 
     body {
@@ -37,9 +37,9 @@
       display: flex;
       flex-direction: column;
       width: 100vw;
+      height: 100vh;
       min-height: 100vh;
-      height: auto;
-      overflow-y: auto;
+      overflow-y: hidden;
       overflow-x: hidden;
       transition: filter 0.2s ease;
     }
@@ -106,7 +106,8 @@
 
     #body {
       flex: 1 1 auto;
-      overflow: visible;
+      overflow-y: auto;
+      overflow-x: hidden;
       width: 100vw;
       min-height: 0;
     }
@@ -131,6 +132,7 @@
       padding: 10px;
       resize: vertical;
       font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 16px;
     }
 
     .code-actions {
@@ -159,8 +161,14 @@
 
     .executed-code {
       width: 100%;
+      max-width: 100vw;
       overflow-x: auto;
       background: transparent;
+    }
+
+    .executed-code * {
+      max-width: 100vw !important;
+      box-sizing: border-box;
     }
 
     #control-panel {
@@ -349,18 +357,10 @@
     }
 
     function updateScrollHostMode() {
-      const hasFixed = fixHeader.checked || fixFooter.checked;
-      if (hasFixed) {
-        app.style.height = '100vh';
-        app.style.overflow = 'hidden';
-        bodyEl.style.overflowY = 'auto';
-        bodyEl.style.overflowX = 'hidden';
-      } else {
-        app.style.height = 'auto';
-        app.style.overflowY = 'auto';
-        app.style.overflowX = 'hidden';
-        bodyEl.style.overflow = 'visible';
-      }
+      app.style.height = '100vh';
+      app.style.overflow = 'hidden';
+      bodyEl.style.overflowY = 'auto';
+      bodyEl.style.overflowX = 'hidden';
     }
 
     function normalizeTarget(target) {
@@ -561,8 +561,6 @@
           img.style.visibility = 'hidden';
           img.onload = () => {
             img.style.visibility = 'visible';
-            img.style.width = img.naturalWidth + 'px';
-            img.style.height = img.naturalHeight + 'px';
           };
           img.onerror = () => {
             img.remove();
@@ -615,8 +613,8 @@
             img.onload = () => {
               img.style.visibility = 'visible';
               if (files.length > 1) {
-                img.style.width = img.naturalWidth + 'px';
-                img.style.height = img.naturalHeight + 'px';
+                img.style.width = 'auto';
+                img.style.height = 'auto';
               }
               saveProject();
             };
@@ -740,7 +738,7 @@
       const pullState = { host: null };
 
       const onTouchStart = (event) => {
-        const host = fixHeader.checked || fixFooter.checked ? bodyEl : app;
+        const host = bodyEl;
         if (host.scrollTop !== 0) return;
         pullState.host = host;
         touchStartY = event.touches[0].clientY;
@@ -762,9 +760,6 @@
         pullState.host = null;
       };
 
-      app.addEventListener('touchstart', onTouchStart, { passive: true });
-      app.addEventListener('touchmove', onTouchMove, { passive: true });
-      app.addEventListener('touchend', onTouchEnd);
       bodyEl.addEventListener('touchstart', onTouchStart, { passive: true });
       bodyEl.addEventListener('touchmove', onTouchMove, { passive: true });
       bodyEl.addEventListener('touchend', onTouchEnd);
