@@ -46,7 +46,7 @@
 
     /* Блюр для экрана предпросмотра в диспетчере приложений */
     body.app-obscured #app {
-      filter: blur(14px) brightness(0.55);
+      filter: blur(32px) brightness(0.35);
       pointer-events: none;
       user-select: none;
     }
@@ -579,8 +579,9 @@
           img.style.visibility = 'hidden';
           img.onload = () => {
             img.style.visibility = 'visible';
+            const dpr = window.devicePixelRatio || 1;
             img.style.width = 'auto';
-            img.style.height = img.naturalHeight + 'px';
+            img.style.height = img.naturalHeight / dpr + 'px';
           };
           img.onerror = () => {
             img.remove();
@@ -632,8 +633,9 @@
             img.style.visibility = 'hidden';
             img.onload = () => {
               img.style.visibility = 'visible';
+              const dpr = window.devicePixelRatio || 1;
               img.style.width = 'auto';
-              img.style.height = img.naturalHeight + 'px';
+              img.style.height = img.naturalHeight / dpr + 'px';
               saveProject();
             };
             img.onerror = () => {
@@ -778,6 +780,9 @@
       bodyEl.addEventListener('touchstart', onTouchStart, { passive: true });
       bodyEl.addEventListener('touchmove', onTouchMove, { passive: true });
       bodyEl.addEventListener('touchend', onTouchEnd);
+      app.addEventListener('touchstart', onTouchStart, { passive: true });
+      app.addEventListener('touchmove', onTouchMove, { passive: true });
+      app.addEventListener('touchend', onTouchEnd);
     }
 
     function setupButtons() {
