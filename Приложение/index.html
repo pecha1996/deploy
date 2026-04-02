@@ -369,8 +369,8 @@
     function updateBodyPadding() {
       const headerHeight = headerEl.getBoundingClientRect().height;
       const footerHeight = footerEl.getBoundingClientRect().height;
-      bodyEl.style.paddingTop = fixHeader.checked ? `${headerHeight}px` : '0';
-      bodyEl.style.paddingBottom = fixFooter.checked ? `${footerHeight}px` : '0';
+      bodyEl.style.paddingTop = headerEl.classList.contains('fixed') ? `${headerHeight}px` : '0';
+      bodyEl.style.paddingBottom = footerEl.classList.contains('fixed') ? `${footerHeight}px` : '0';
     }
 
     function updateScrollHostMode() {
@@ -581,7 +581,7 @@
             img.style.visibility = 'visible';
             const dpr = window.devicePixelRatio || 1;
             img.style.width = 'auto';
-            img.style.height = img.naturalHeight / dpr + 'px';
+            img.style.height = img.naturalHeight + 'px';
           };
           img.onerror = () => {
             img.remove();
@@ -635,7 +635,7 @@
               img.style.visibility = 'visible';
               const dpr = window.devicePixelRatio || 1;
               img.style.width = 'auto';
-              img.style.height = img.naturalHeight / dpr + 'px';
+              img.style.height = img.naturalHeight + 'px';
               saveProject();
             };
             img.onerror = () => {
@@ -717,6 +717,8 @@
       bodyEl = document.getElementById('body');
       footerEl = document.getElementById('footer');
       currentTarget = bodyEl;
+      headerEl.classList.remove('fixed');
+      footerEl.classList.remove('fixed');
 
       if (!headerEl || !bodyEl || !footerEl) {
         location.reload();
@@ -743,12 +745,8 @@
     }
 
     function runRefresh() {
-      const executeButtons = bodyEl.querySelectorAll('.code-actions .execute');
-      executeButtons.forEach((button) => button.click());
-      bodyEl.style.opacity = '0.985';
-      setTimeout(() => {
-        bodyEl.style.opacity = '1';
-      }, 220);
+      saveProject();
+      window.location.reload();
     }
 
     function setupPullToRefreshForBody() {
