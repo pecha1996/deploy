@@ -348,6 +348,21 @@
       bodyEl.style.paddingBottom = fixFooter.checked ? footerHeight + 'px' : '0';
     }
 
+    function updateScrollHostMode() {
+      const hasFixed = fixHeader.checked || fixFooter.checked;
+      if (hasFixed) {
+        app.style.height = '100vh';
+        app.style.overflow = 'hidden';
+        bodyEl.style.overflowY = 'auto';
+        bodyEl.style.overflowX = 'hidden';
+      } else {
+        app.style.height = 'auto';
+        app.style.overflowY = 'auto';
+        app.style.overflowX = 'hidden';
+        bodyEl.style.overflow = 'visible';
+      }
+    }
+
     function normalizeTarget(target) {
       if (target === headerEl || target === footerEl || target === bodyEl) return target;
       return bodyEl;
@@ -546,6 +561,8 @@
           img.style.visibility = 'hidden';
           img.onload = () => {
             img.style.visibility = 'visible';
+            img.style.width = img.naturalWidth + 'px';
+            img.style.height = img.naturalHeight + 'px';
           };
           img.onerror = () => {
             img.remove();
@@ -577,25 +594,37 @@
         const fileInput = document.createElement('input');
         fileInput.type = 'file';
         fileInput.accept = 'image/*';
+        fileInput.multiple = true;
         fileInput.onchange = async (e) => {
-          const file = e.target.files && e.target.files[0];
-          if (!file) return;
-          const dataUrl = await readFileAsDataUrl(file);
-          if (!dataUrl) return;
-          const img = document.createElement('img');
-          img.src = dataUrl;
-          img.alt = '';
-          img.style.visibility = 'hidden';
-          img.onload = () => {
-            img.style.visibility = 'visible';
-            saveProject();
-          };
-          img.onerror = () => {
-            img.remove();
-          };
+          const files = Array.from(e.target.files || []);
+          if (!files.length) return;
           block.innerHTML = '';
-          block.classList.add('media-block');
-          block.appendChild(img);
+          if (files.length > 1) {
+            block.classList.add('horizontal-scroll', 'media-block');
+          } else {
+            block.classList.add('media-block');
+            block.classList.remove('horizontal-scroll');
+          }
+          for (const file of files) {
+            const dataUrl = await readFileAsDataUrl(file);
+            if (!dataUrl) continue;
+            const img = document.createElement('img');
+            img.src = dataUrl;
+            img.alt = '';
+            img.style.visibility = 'hidden';
+            img.onload = () => {
+              img.style.visibility = 'visible';
+              if (files.length > 1) {
+                img.style.width = img.naturalWidth + 'px';
+                img.style.height = img.naturalHeight + 'px';
+              }
+              saveProject();
+            };
+            img.onerror = () => {
+              img.remove();
+            };
+            block.appendChild(img);
+          }
           saveProject();
         };
         fileInput.click();
@@ -632,6 +661,8 @@
       }
 
       updateBodyPadding();
+      updateScrollHostMode();
+      updateThemeColorFromHeader();
       saveProject();
     }
 
@@ -699,28 +730,44 @@
     function runRefresh() {
       const executeButtons = bodyEl.querySelectorAll('.code-actions .execute');
       executeButtons.forEach((button) => button.click());
+      bodyEl.style.opacity = '0.985';
+      setTimeout(() => {
+        bodyEl.style.opacity = '1';
+      }, 220);
     }
 
     function setupPullToRefreshForBody() {
-      const scrollHost = app;
-      scrollHost.addEventListener('touchstart', (event) => {
-        if (scrollHost.scrollTop !== 0) return;
+      const pullState = { host: null };
+
+      const onTouchStart = (event) => {
+        const host = fixHeader.checked || fixFooter.checked ? bodyEl : app;
+        if (host.scrollTop !== 0) return;
+        pullState.host = host;
         touchStartY = event.touches[0].clientY;
         isPulling = true;
-      }, { passive: true });
+      };
 
-      scrollHost.addEventListener('touchmove', (event) => {
-        if (!isPulling) return;
+      const onTouchMove = (event) => {
+        if (!isPulling || !pullState.host) return;
         const delta = event.touches[0].clientY - touchStartY;
-        if (delta > 80 && scrollHost.scrollTop === 0) {
+        if (delta > 80 && pullState.host.scrollTop === 0) {
           isPulling = false;
+          pullState.host = null;
           runRefresh();
         }
-      }, { passive: true });
+      };
 
-      scrollHost.addEventListener('touchend', () => {
+      const onTouchEnd = () => {
         isPulling = false;
-      });
+        pullState.host = null;
+      };
+
+      app.addEventListener('touchstart', onTouchStart, { passive: true });
+      app.addEventListener('touchmove', onTouchMove, { passive: true });
+      app.addEventListener('touchend', onTouchEnd);
+      bodyEl.addEventListener('touchstart', onTouchStart, { passive: true });
+      bodyEl.addEventListener('touchmove', onTouchMove, { passive: true });
+      bodyEl.addEventListener('touchend', onTouchEnd);
     }
 
     function setupButtons() {
@@ -819,6 +866,7 @@
       toggleFix('header');
       toggleFix('footer');
       updateThemeColorFromHeader();
+      updateScrollHostMode();
       setupButtons();
       setupEventDelegation();
       setupPullToRefreshForBody();
