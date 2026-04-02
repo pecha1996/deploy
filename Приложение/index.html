@@ -77,7 +77,7 @@
     }
 
     #header.fixed {
-      position: fixed !important;
+      position: sticky !important;
       top: 0;
       left: 0;
       width: 100vw;
@@ -85,7 +85,7 @@
     }
 
     #footer.fixed {
-      position: fixed !important;
+      position: sticky !important;
       bottom: 0;
       left: 0;
       width: 100vw;
@@ -241,6 +241,13 @@
       scroll-snap-align: start;
     }
 
+    .natural-image-block img {
+      width: auto !important;
+      height: auto !important;
+      max-width: none !important;
+      object-fit: contain !important;
+    }
+
     body.ui-hidden .code-actions,
     body.ui-hidden .block textarea {
       visibility: hidden !important;
@@ -331,7 +338,7 @@
     <button type="button" id="add-horizontal">Горизонтальный блок</button>
     <button type="button" id="add-button-zone">Зона-кнопка</button>
     <button type="button" id="quick-corridor">Быстрый коридор</button>
-    <button type="button" id="set-header-color">Цвет header</button>
+    <button type="button" id="set-header-color">Цвет статус-бара</button>
     <button type="button" id="save-now">Сохранить</button>
     <button type="button" id="reset-layout">Сбросить проект</button>
     <label><input type="checkbox" id="fix-header" /> Закрепить header</label>
@@ -362,10 +369,8 @@
     }
 
     function updateBodyPadding() {
-      const headerHeight = headerEl.getBoundingClientRect().height;
-      const footerHeight = footerEl.getBoundingClientRect().height;
-      bodyEl.style.paddingTop = fixHeader.checked ? headerHeight + 'px' : '0';
-      bodyEl.style.paddingBottom = fixFooter.checked ? footerHeight + 'px' : '0';
+      bodyEl.style.paddingTop = '0';
+      bodyEl.style.paddingBottom = '0';
     }
 
     function updateScrollHostMode() {
@@ -550,7 +555,7 @@
       }
 
       const block = document.createElement('div');
-      block.className = 'block body-block media-block horizontal-scroll';
+      block.className = 'block body-block media-block natural-image-block horizontal-scroll';
       addDragHandle(block);
       const fileInput = document.createElement('input');
       fileInput.type = 'file';
@@ -613,9 +618,9 @@
           if (!files.length) return;
           block.innerHTML = '';
           if (files.length > 1) {
-            block.classList.add('horizontal-scroll', 'media-block');
+            block.classList.add('horizontal-scroll', 'media-block', 'natural-image-block');
           } else {
-            block.classList.add('media-block');
+            block.classList.add('media-block', 'natural-image-block');
             block.classList.remove('horizontal-scroll');
           }
           for (const file of files) {
@@ -827,10 +832,6 @@
         if (document.visibilityState === 'visible') reveal();
       });
 
-      window.addEventListener('blur', () => {
-        if (blurToggle.checked) obscure();
-      });
-      window.addEventListener('focus', reveal);
       window.addEventListener('pagehide', () => {
         if (blurToggle.checked) obscure();
       });
