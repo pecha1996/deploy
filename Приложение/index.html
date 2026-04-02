@@ -174,6 +174,13 @@
       box-sizing: border-box;
     }
 
+    .executed-frame {
+      width: 100%;
+      border: none;
+      display: block;
+      background: transparent;
+    }
+
     #control-panel {
       position: fixed;
       right: 10px;
@@ -430,20 +437,21 @@
 
       const codeBlock = document.createElement('div');
       codeBlock.classList.add('executed-code');
-      codeBlock.innerHTML = code;
-      outputRoot.appendChild(codeBlock);
-
-      const scripts = codeBlock.querySelectorAll('script');
-      scripts.forEach((oldScript) => {
-        const newScript = document.createElement('script');
-        if (oldScript.src) {
-          newScript.src = oldScript.src;
-        } else {
-          newScript.textContent = oldScript.textContent;
+      const frame = document.createElement('iframe');
+      frame.className = 'executed-frame';
+      frame.sandbox = 'allow-scripts allow-same-origin';
+      frame.srcdoc = code;
+      frame.onload = () => {
+        try {
+          const doc = frame.contentDocument;
+          const h = Math.max(doc?.documentElement?.scrollHeight || 0, doc?.body?.scrollHeight || 0, 120);
+          frame.style.height = h + 'px';
+        } catch {
+          frame.style.height = '240px';
         }
-        document.body.appendChild(newScript);
-        oldScript.remove();
-      });
+      };
+      codeBlock.appendChild(frame);
+      outputRoot.appendChild(codeBlock);
     }
 
     function addCodeBlock(target) {
@@ -619,10 +627,8 @@
             img.style.visibility = 'hidden';
             img.onload = () => {
               img.style.visibility = 'visible';
-              if (files.length > 1) {
-                img.style.width = 'auto';
-                img.style.height = 'auto';
-              }
+              img.style.width = img.naturalWidth + 'px';
+              img.style.height = img.naturalHeight + 'px';
               saveProject();
             };
             img.onerror = () => {
