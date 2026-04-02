@@ -77,7 +77,7 @@
     }
 
     #header.fixed {
-      position: sticky !important;
+      position: fixed !important;
       top: 0;
       left: 0;
       width: 100vw;
@@ -85,7 +85,7 @@
     }
 
     #footer.fixed {
-      position: sticky !important;
+      position: fixed !important;
       bottom: 0;
       left: 0;
       width: 100vw;
@@ -250,9 +250,7 @@
 
     body.ui-hidden .code-actions,
     body.ui-hidden .block textarea {
-      visibility: hidden !important;
-      opacity: 0 !important;
-      pointer-events: none !important;
+      display: none !important;
     }
 
     .horizontal-scroll::-webkit-scrollbar {
@@ -369,8 +367,10 @@
     }
 
     function updateBodyPadding() {
-      bodyEl.style.paddingTop = '0';
-      bodyEl.style.paddingBottom = '0';
+      const headerHeight = headerEl.getBoundingClientRect().height;
+      const footerHeight = footerEl.getBoundingClientRect().height;
+      bodyEl.style.paddingTop = fixHeader.checked ? `${headerHeight}px` : '0';
+      bodyEl.style.paddingBottom = fixFooter.checked ? `${footerHeight}px` : '0';
     }
 
     function updateScrollHostMode() {
@@ -579,7 +579,7 @@
           img.style.visibility = 'hidden';
           img.onload = () => {
             img.style.visibility = 'visible';
-            img.style.width = img.naturalWidth + 'px';
+            img.style.width = 'auto';
             img.style.height = img.naturalHeight + 'px';
           };
           img.onerror = () => {
@@ -632,7 +632,7 @@
             img.style.visibility = 'hidden';
             img.onload = () => {
               img.style.visibility = 'visible';
-              img.style.width = img.naturalWidth + 'px';
+              img.style.width = 'auto';
               img.style.height = img.naturalHeight + 'px';
               saveProject();
             };
@@ -754,7 +754,7 @@
 
       const onTouchStart = (event) => {
         const host = bodyEl;
-        if (host.scrollTop !== 0) return;
+        if (host.scrollTop > 2) return;
         pullState.host = host;
         touchStartY = event.touches[0].clientY;
         isPulling = true;
@@ -763,7 +763,7 @@
       const onTouchMove = (event) => {
         if (!isPulling || !pullState.host) return;
         const delta = event.touches[0].clientY - touchStartY;
-        if (delta > 80 && pullState.host.scrollTop === 0) {
+        if (delta > 28 && pullState.host.scrollTop <= 2) {
           isPulling = false;
           pullState.host = null;
           runRefresh();
@@ -836,6 +836,10 @@
         if (blurToggle.checked) obscure();
       });
       window.addEventListener('pageshow', reveal);
+      window.addEventListener('blur', () => {
+        if (blurToggle.checked) obscure();
+      });
+      window.addEventListener('focus', reveal);
     }
 
     function toHexColor(color) {
