@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -5,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Конструктор приложений</title>
   <meta name="theme-color" content="#222" id="themeColorMeta" />
-  <link rel="icon" id="appFavicon" href="" />
+  <link rel="icon" id="appFavicon" href="icon.png" type="image/png" />
   <style>
     :root {
       --panel-bg: rgba(0, 0, 0, 0.72);
@@ -13,6 +14,7 @@
       --text: #fff;
       --body-bg: #111;
       --danger: #ff5c5c;
+      --muted: #aaaaaa;
     }
 
     * {
@@ -37,24 +39,22 @@
     #app {
       display: flex;
       flex-direction: column;
-      width: 100vw;
-      height: 100vh;
-      min-height: 100vh;
-      overflow-y: hidden;
-      overflow-x: hidden;
+      width: 100%;
+      height: 100dvh;
+      min-height: 100dvh;
+      overflow: hidden;
       transition: filter 0.2s ease;
+      will-change: filter;
     }
 
-    /* Блюр для экрана предпросмотра в диспетчере приложений */
     body.app-obscured #app {
-      filter: blur(32px) brightness(0.35);
+      filter: blur(14px) brightness(0.55);
       pointer-events: none;
       user-select: none;
     }
 
     .block {
-      width: 100vw;
-      min-width: 100vw;
+      width: 100%;
       margin: 0;
       padding: 0;
       position: relative;
@@ -64,24 +64,28 @@
     #footer {
       display: flex;
       flex-direction: column;
-      align-items: center;
+      align-items: stretch;
+      justify-content: flex-start;
       width: 100%;
-      justify-content: center;
       overflow: hidden;
-      background: var(--surface);
-      min-height: 56px;
-      text-align: center;
-      padding: 0px;
+      background: transparent;
+      min-height: 0;
+      padding: 0;
       border: none;
-      outline: none;
-      box-shadow: none;
+      z-index: 20;
+    }
+
+    #header:not(:empty),
+    #footer:not(:empty) {
+      min-height: 56px;
+      background: var(--surface);
     }
 
     #header.fixed {
       position: fixed;
       top: 0;
       left: 0;
-      width: 100vw;
+      width: 100%;
       z-index: 9999;
     }
 
@@ -89,7 +93,7 @@
       position: fixed;
       bottom: 0;
       left: 0;
-      width: 100vw;
+      width: 100%;
       z-index: 9999;
     }
 
@@ -98,26 +102,25 @@
       color: transparent;
       font-size: 0;
       line-height: 0;
-      padding: 0;
       min-height: 0;
-      align-items: stretch;
-      justify-content: flex-start;
     }
 
     #body {
       flex: 1 1 auto;
       overflow-y: auto;
       overflow-x: hidden;
-      width: 100vw;
-      min-width: 100vw;
+      width: 100%;
       min-height: 0;
+      padding-top: 0;
+      padding-bottom: 0;
     }
 
     .block img {
-      width: 100vw;
+      width: 100%;
+      max-width: 100%;
+      height: auto;
       display: block;
       object-fit: cover;
-      max-width: 100%;
       border: none;
       margin: 0;
       padding: 0;
@@ -125,22 +128,21 @@
     }
 
     .block textarea {
-      width: 100vw;
-      min-height: 100px;
+      width: 100%;
+      min-height: 110px;
       background: #333;
       color: #fff;
       border: none;
       padding: 10px;
       resize: vertical;
       font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-      font-size: 16px;
+      font-size: 15px;
     }
 
     .code-actions {
       display: flex;
       gap: 8px;
       padding: 0;
-      background: transparent;
     }
 
     .code-actions button {
@@ -162,93 +164,22 @@
 
     .executed-code {
       width: 100%;
-      min-width: 100%;
-      max-width: 100vw;
+      max-width: 100%;
       overflow-x: auto;
       background: transparent;
     }
 
-    .executed-code * {
-      max-width: 100vw !important;
-      box-sizing: border-box;
-    }
-
-    .executed-frame {
+    .executed-frame,
+    .section-frame,
+    .horizontal-code-frame {
       width: 100%;
       border: none;
       display: block;
       background: transparent;
     }
 
-    #control-panel {
-      position: fixed;
-      right: 10px;
-      top: max(10px, env(safe-area-inset-top));
-      background: var(--panel-bg);
-      backdrop-filter: blur(8px);
-      padding: 10px;
-      display: flex;
-      flex-direction: column;
-      gap: 5px;
-      z-index: 10000;
-      border-radius: 8px;
-      pointer-events: auto;
-      transition: transform 0.3s;
-      max-width: calc(100vw - 20px);
-    }
-
-    #control-panel.hidden {
-      transform: translateX(120%);
-    }
-
-    #control-panel button {
-      padding: 7px 10px;
-      cursor: pointer;
-      border-radius: 6px;
-      border: 1px solid #666;
-      background: #2f2f2f;
-      color: #fff;
-    }
-
-    #control-panel label {
-      font-size: 14px;
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      cursor: pointer;
-    }
-
-    .horizontal-scroll {
-  display: flex;
-  overflow-x: auto;
-  overflow-y: hidden;
-  gap: 0;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-.horizontal-scroll img {
-  flex: 0 0 auto;
-  height: auto;     /* сохраняем реальную высоту */
-  width: auto;      /* сохраняем ширину */
-  max-width: none;  /* 🔥 убираем ограничения */
-  display: block;
-}
-
-    .natural-image-block img {
-      width: auto !important;
-      height: auto !important;
-      max-width: none !important;
-      object-fit: contain !important;
-    }
-
-    body.ui-hidden .code-actions,
-    body.ui-hidden .block textarea {
-      display: none !important;
-    }
-
-    .horizontal-scroll::-webkit-scrollbar {
-      display: none;
+    .section-frame {
+      min-height: 56px;
     }
 
     .body-block {
@@ -261,17 +192,107 @@
       line-height: 0;
     }
 
+    .horizontal-scroll {
+      display: flex;
+      align-items: flex-start;
+      overflow-x: auto;
+      overflow-y: hidden;
+      gap: 0;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      touch-action: pan-x pan-y;
+    }
+
+    .horizontal-scroll::-webkit-scrollbar {
+      display: none;
+    }
+
+    .horizontal-item {
+      flex: 0 0 auto;
+      display: block;
+    }
+
+    .horizontal-scroll img.horizontal-item {
+      width: auto !important;
+      max-width: none !important;
+      height: auto !important;
+      object-fit: contain !important;
+    }
+
+    .horizontal-code-item {
+      flex: 0 0 90vw;
+      width: 90vw;
+      max-width: 90vw;
+      min-height: 140px;
+      border-right: 1px solid #2d2d2d;
+      background: #171717;
+    }
+
+    #control-panel {
+      position: fixed;
+      right: 10px;
+      top: max(10px, env(safe-area-inset-top));
+      background: var(--panel-bg);
+      backdrop-filter: blur(8px);
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      z-index: 10000;
+      border-radius: 8px;
+      max-width: min(92vw, 360px);
+      max-height: calc(100dvh - 20px);
+      overflow: auto;
+    }
+
+    #control-panel button {
+      padding: 8px 10px;
+      cursor: pointer;
+      border-radius: 6px;
+      border: 1px solid #666;
+      background: #2f2f2f;
+      color: #fff;
+      text-align: left;
+    }
+
+    #control-panel label {
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+    }
+
     .top-actions {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 6px;
     }
 
-    #header.has-image img,
-    #footer.has-image img {
-      width: 100%;
-      height: auto;
-      object-fit: cover;
+    .links-box {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 8px;
+      background: rgba(255, 255, 255, 0.04);
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.35;
+      word-break: break-all;
+    }
+
+    .links-box button {
+      font-size: 12px;
+      padding: 6px 8px;
+      text-align: left;
+    }
+
+    .links-title {
+      color: #fff;
+      font-size: 13px;
+      font-weight: 700;
     }
 
     #sheet-backdrop {
@@ -314,73 +335,99 @@
 <body>
   <div id="sheet-backdrop"></div>
   <div id="bottom-sheet"></div>
+
   <div id="app">
-    <div id="header" class="block" data-target="header">Header (тапните для редактирования)</div>
-    <div id="body" class="block-container" data-target="body"></div>
-    <div id="footer" class="block" data-target="footer">Footer (тапните для редактирования)</div>
+    <div id="header" class="block"></div>
+    <div id="body" class="block-container"></div>
+    <div id="footer" class="block"></div>
   </div>
 
   <div id="control-panel">
     <div class="top-actions">
       <button type="button" id="add-header-image">Фото в header</button>
       <button type="button" id="add-footer-image">Фото в footer</button>
+      <button type="button" id="add-header-code">Код в header</button>
+      <button type="button" id="add-footer-code">Код в footer</button>
     </div>
-    <button type="button" id="add-image">Добавить фото</button>
-    <button type="button" id="add-code">Добавить код</button>
-    <button type="button" id="add-horizontal">Горизонтальный блок</button>
+
+    <button type="button" id="set-app-title">Название приложения</button>
+    <button type="button" id="set-app-icon">Загрузить иконку</button>
+    <button type="button" id="add-image">Добавить фото в body</button>
+    <button type="button" id="add-code">Добавить код в body</button>
+    <button type="button" id="add-horizontal">Горизонтальный блок (фото/код)</button>
     <button type="button" id="add-button-zone">Зона-кнопка</button>
     <button type="button" id="quick-corridor">Быстрый коридор</button>
-    <button type="button" id="set-header-color">Цвет статус-бара</button>
-    <button type="button" id="set-app-icon">Загрузить иконку</button>
+    <button type="button" id="set-header-color">Цвет header</button>
+
+    <button type="button" id="create-screen">Создать 2-й экран</button>
+    <button type="button" id="copy-current-link">Скопировать ссылку экрана</button>
     <button type="button" id="share-link">Создать ссылку</button>
+
     <button type="button" id="save-now">Сохранить</button>
     <button type="button" id="reset-layout">Сбросить проект</button>
+
     <label><input type="checkbox" id="fix-header" /> Закрепить header</label>
     <label><input type="checkbox" id="fix-footer" /> Закрепить footer</label>
     <label><input type="checkbox" id="enable-privacy-blur" checked /> Блюр в фоне</label>
+
+    <div class="links-box" id="screen-links"></div>
   </div>
 
   <script>
+    const STORAGE_KEY = 'appScreensV1';
+    const LEGACY_KEY = 'appLayoutV2';
+
     const app = document.getElementById('app');
-    const panelEl = document.getElementById('control-panel');
     const themeMeta = document.getElementById('themeColorMeta');
     const faviconEl = document.getElementById('appFavicon');
     const fixHeader = document.getElementById('fix-header');
     const fixFooter = document.getElementById('fix-footer');
     const blurToggle = document.getElementById('enable-privacy-blur');
+    const linksBox = document.getElementById('screen-links');
 
     let bodyEl;
     let headerEl;
     let footerEl;
-    let currentTarget;
-    let tapCount = 0;
-    let tapTimeout;
     let touchStartY = 0;
     let isPulling = false;
+    let sectionResizeObserver;
+    let detachPullRefresh = () => {};
 
-    function updateThemeColorFromHeader() {
-      const headerImg = headerEl.querySelector('img');
-      if (headerImg && headerImg.complete && headerImg.naturalWidth > 0) {
-        const sampled = sampleTopColorFromImage(headerImg);
-        if (sampled) {
-          themeMeta.setAttribute('content', sampled);
-          return;
-        }
+    const initialAppMarkup = app.innerHTML;
+    let currentScreenId = 'main';
+    let screensState = {};
+
+    function defaultScreenState() {
+      return {
+        appMarkup: initialAppMarkup,
+        fixHeader: false,
+        fixFooter: false,
+        blurEnabled: true,
+        appIcon: 'icon.png',
+        appTitle: 'Конструктор приложений',
+      };
+    }
+
+    function parseScreenIdFromHash() {
+      const hash = (location.hash || '').replace(/^#/, '');
+      if (!hash) return 'main';
+      const params = new URLSearchParams(hash);
+      const raw = params.get('screen') || 'main';
+      const clean = String(raw).trim().toLowerCase().replace(/[^a-z0-9_-]/g, '');
+      return clean || 'main';
+    }
+
+    function setScreenHash(screenId, replace = false) {
+      const nextHash = '#screen=' + encodeURIComponent(screenId);
+      if (replace) {
+        history.replaceState(null, '', nextHash);
+      } else {
+        location.hash = nextHash;
       }
-      const computedColor = window.getComputedStyle(headerEl).backgroundColor;
-      themeMeta.setAttribute('content', toHexColor(computedColor) || '#222');
     }
 
-    function updateBodyPadding() {
-      bodyEl.style.paddingTop = '0';
-      bodyEl.style.paddingBottom = '0';
-    }
-
-    function updateScrollHostMode() {
-      app.style.height = '100vh';
-      app.style.overflow = 'hidden';
-      bodyEl.style.overflowY = 'auto';
-      bodyEl.style.overflowX = 'hidden';
+    function buildScreenUrl(screenId) {
+      return location.origin + location.pathname + '#screen=' + encodeURIComponent(screenId);
     }
 
     function normalizeTarget(target) {
@@ -388,8 +435,88 @@
       return bodyEl;
     }
 
-    function addDragHandle(parentBlock) {
-      return parentBlock;
+    function clearSectionClasses(sectionEl) {
+      sectionEl.classList.remove('has-image');
+      sectionEl.classList.remove('has-code');
+    }
+
+    function ensureScreenExists(screenId) {
+      if (!screensState[screenId]) {
+        screensState[screenId] = defaultScreenState();
+      }
+    }
+
+    function updateThemeColorFromHeader() {
+      const computedColor = window.getComputedStyle(headerEl).backgroundColor;
+      themeMeta.setAttribute('content', computedColor || '#222');
+    }
+
+    function updateBodyPadding() {
+      const headerHeight = headerEl.offsetHeight;
+      const footerHeight = footerEl.offsetHeight;
+      bodyEl.style.paddingTop = fixHeader.checked ? headerHeight + 'px' : '0';
+      bodyEl.style.paddingBottom = fixFooter.checked ? footerHeight + 'px' : '0';
+    }
+
+    function readFileAsDataUrl(file) {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : '');
+        reader.onerror = () => resolve('');
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function createFrameFromCode(code, className = 'executed-frame', minHeight = 120) {
+      const frame = document.createElement('iframe');
+      frame.className = className;
+      frame.sandbox = 'allow-scripts allow-same-origin';
+      frame.srcdoc = code;
+      frame.onload = () => {
+        try {
+          const doc = frame.contentDocument;
+          const h = Math.max(doc?.documentElement?.scrollHeight || 0, doc?.body?.scrollHeight || 0, minHeight);
+          frame.style.height = h + 'px';
+        } catch {
+          frame.style.height = minHeight + 'px';
+        }
+        if (className === 'section-frame') {
+          updateBodyPadding();
+          updateThemeColorFromHeader();
+          saveProject();
+        }
+      };
+      return frame;
+    }
+
+    function executeCodeFromTextArea(textarea, outputRoot) {
+      const code = textarea.value;
+      outputRoot.innerHTML = '';
+      if (!code.trim()) return;
+
+      const codeBlock = document.createElement('div');
+      codeBlock.classList.add('executed-code');
+      codeBlock.appendChild(createFrameFromCode(code, 'executed-frame', 120));
+      outputRoot.appendChild(codeBlock);
+    }
+    function setSectionCode(target) {
+      const sectionEl = normalizeTarget(target);
+      if (sectionEl === bodyEl) {
+        alert('Код секции доступен только для header/footer.');
+        return;
+      }
+
+      const html = prompt('Вставьте HTML/JS для секции', '<div style="padding:12px;">Содержимое секции</div>');
+      if (!html || !html.trim()) return;
+
+      sectionEl.innerHTML = '';
+      clearSectionClasses(sectionEl);
+      sectionEl.classList.add('has-code');
+      sectionEl.appendChild(createFrameFromCode(html, 'section-frame', 56));
+
+      updateBodyPadding();
+      updateThemeColorFromHeader();
+      saveProject();
     }
 
     function addImageBlock(target) {
@@ -397,6 +524,7 @@
       const fileInput = document.createElement('input');
       fileInput.type = 'file';
       fileInput.accept = 'image/*';
+
       fileInput.onchange = async (e) => {
         const file = e.target.files && e.target.files[0];
         if (!file) return;
@@ -407,59 +535,33 @@
         img.src = dataUrl;
         img.alt = '';
         img.style.visibility = 'hidden';
-        img.onerror = () => {
-          img.remove();
-        };
+        img.onerror = () => img.remove();
 
-        if (target.id === 'header' || target.id === 'footer') {
-          target.textContent = '';
+        if (target === headerEl || target === footerEl) {
           target.innerHTML = '';
+          clearSectionClasses(target);
           target.classList.add('has-image');
           target.appendChild(img);
           img.onload = () => {
             img.style.visibility = 'visible';
-            target.style.height = 'auto';
             updateBodyPadding();
             updateThemeColorFromHeader();
             saveProject();
           };
-        } else {
-          const block = document.createElement('div');
-          block.className = 'block body-block media-block';
-          addDragHandle(block);
-          block.appendChild(img);
-          bodyEl.appendChild(block);
-          img.onload = () => {
-            img.style.visibility = 'visible';
-          };
+          return;
+        }
+
+        const block = document.createElement('div');
+        block.className = 'block body-block media-block';
+        block.appendChild(img);
+        bodyEl.appendChild(block);
+        img.onload = () => {
+          img.style.visibility = 'visible';
           saveProject();
-        }
+        };
       };
+
       fileInput.click();
-    }
-
-    function executeCodeFromTextArea(textarea, outputRoot) {
-      const code = textarea.value;
-      outputRoot.innerHTML = '';
-      if (!code.trim()) return;
-
-      const codeBlock = document.createElement('div');
-      codeBlock.classList.add('executed-code');
-      const frame = document.createElement('iframe');
-      frame.className = 'executed-frame';
-      frame.sandbox = 'allow-scripts allow-same-origin';
-      frame.srcdoc = code;
-      frame.onload = () => {
-        try {
-          const doc = frame.contentDocument;
-          const h = Math.max(doc?.documentElement?.scrollHeight || 0, doc?.body?.scrollHeight || 0, 120);
-          frame.style.height = h + 'px';
-        } catch {
-          frame.style.height = '240px';
-        }
-      };
-      codeBlock.appendChild(frame);
-      outputRoot.appendChild(codeBlock);
     }
 
     function addCodeBlock(target) {
@@ -471,7 +573,6 @@
 
       const block = document.createElement('div');
       block.className = 'block body-block';
-      addDragHandle(block);
 
       const textarea = document.createElement('textarea');
       textarea.placeholder = 'Вставьте HTML/JS код';
@@ -490,12 +591,7 @@
       clearBtn.type = 'button';
       clearBtn.textContent = 'Очистить результат';
 
-      actions.appendChild(executeBtn);
-      actions.appendChild(clearBtn);
-      block.appendChild(actions);
-
       const outputRoot = document.createElement('div');
-      block.appendChild(outputRoot);
 
       executeBtn.addEventListener('click', () => {
         executeCodeFromTextArea(textarea, outputRoot);
@@ -507,8 +603,88 @@
         saveProject();
       });
 
+      actions.appendChild(executeBtn);
+      actions.appendChild(clearBtn);
+
+      block.appendChild(actions);
+      block.appendChild(outputRoot);
       bodyEl.appendChild(block);
       saveProject();
+    }
+
+    function addHorizontalCodeItem(container) {
+      const code = prompt('HTML/JS для горизонтального элемента', '<div style="padding:12px">Контент</div>');
+      if (!code || !code.trim()) return;
+
+      const holder = document.createElement('div');
+      holder.className = 'horizontal-code-item';
+      holder.appendChild(createFrameFromCode(code, 'horizontal-code-frame', 140));
+      container.appendChild(holder);
+    }
+
+    function addHorizontalScrollBlock(target) {
+      target = normalizeTarget(target);
+      if (target !== bodyEl) {
+        alert('Горизонтальный блок можно добавить только в body.');
+        return;
+      }
+
+      const mode = (prompt('Тип блока: image / code', 'image') || 'image').toLowerCase().trim();
+      const block = document.createElement('div');
+      block.className = 'block body-block media-block horizontal-scroll';
+
+      if (mode === 'code') {
+        const countRaw = prompt('Сколько горизонтальных код-элементов?', '2');
+        const count = Math.max(1, Math.min(10, Number.parseInt(countRaw || '1', 10) || 1));
+        for (let i = 0; i < count; i += 1) {
+          addHorizontalCodeItem(block);
+        }
+        if (!block.children.length) return;
+        bodyEl.appendChild(block);
+        saveProject();
+        return;
+      }
+
+      const fileInput = document.createElement('input');
+      fileInput.type = 'file';
+      fileInput.accept = 'image/*';
+      fileInput.multiple = true;
+
+      fileInput.onchange = async (e) => {
+        const files = Array.from(e.target.files || []);
+        if (!files.length) return;
+
+        for (const file of files) {
+          const dataUrl = await readFileAsDataUrl(file);
+          if (!dataUrl) continue;
+
+          const img = document.createElement('img');
+          img.className = 'horizontal-item';
+          img.src = dataUrl;
+          img.alt = '';
+          img.style.visibility = 'hidden';
+          img.onerror = () => img.remove();
+
+          img.onload = () => {
+            const dpr = window.devicePixelRatio || 1;
+            const displayWidth = Math.max(1, Math.round(img.naturalWidth / dpr));
+            const displayHeight = Math.max(1, Math.round(img.naturalHeight / dpr));
+            img.style.width = displayWidth + 'px';
+            img.style.height = displayHeight + 'px';
+            img.style.visibility = 'visible';
+            saveProject();
+          };
+
+          block.appendChild(img);
+        }
+
+        if (block.children.length) {
+          bodyEl.appendChild(block);
+          saveProject();
+        }
+      };
+
+      fileInput.click();
     }
 
     function addButtonZoneBlock(target) {
@@ -529,18 +705,17 @@
       button.style.border = 'none';
       button.style.background = '#2c2c2c';
       button.style.color = '#fff';
-      button.style.borderRadius = '0';
 
       const actionType = prompt('Тип действия: url / sheet', 'url');
       if ((actionType || '').toLowerCase() === 'sheet') {
-        const sheetHtml = prompt('HTML контент для нижнего окна (sheet)', '<h3>Нижнее окно</h3><p>Ваш контент</p>') || '';
+        const sheetHtml = prompt('HTML контент для нижнего окна', '<h3>Нижнее окно</h3><p>Ваш контент</p>') || '';
         button.addEventListener('click', () => openBottomSheet(sheetHtml));
       } else {
-        const targetUrl = prompt('URL для открытия (можно оставить пустым)', 'https://');
+        const targetUrl = prompt('URL для открытия (можно пусто)', 'https://');
         if (targetUrl && targetUrl !== 'https://') {
           button.addEventListener('click', () => window.open(targetUrl, '_blank', 'noopener,noreferrer'));
         } else {
-          const message = prompt('Текст действия по кнопке', 'Нажата зона-кнопка') || 'Нажата зона-кнопка';
+          const message = prompt('Текст действия', 'Нажата зона-кнопка') || 'Нажата зона-кнопка';
           button.addEventListener('click', () => alert(message));
         }
       }
@@ -548,55 +723,6 @@
       block.appendChild(button);
       bodyEl.appendChild(block);
       saveProject();
-    }
-
-    function addHorizontalScrollBlock(target) {
-      target = normalizeTarget(target);
-      if (target !== bodyEl) {
-        alert('Горизонтальный блок можно добавить только в body.');
-        return;
-      }
-
-      const block = document.createElement('div');
-      block.className = 'block body-block media-block natural-image-block horizontal-scroll';
-      addDragHandle(block);
-      const fileInput = document.createElement('input');
-      fileInput.type = 'file';
-      fileInput.accept = 'image/*';
-      fileInput.multiple = true;
-
-      fileInput.onchange = async (e) => {
-        const files = Array.from(e.target.files || []);
-        if (!files.length) return;
-
-        for (const file of files) {
-          const dataUrl = await readFileAsDataUrl(file);
-          if (!dataUrl) continue;
-          const img = document.createElement('img');
-          img.src = dataUrl;
-          img.alt = '';
-          img.style.width = 'auto';
-          img.style.height = 'auto';
-          img.style.maxWidth = 'none';
-          img.style.objectFit = 'contain';
-          img.style.visibility = 'hidden';
-          img.onload = () => {
-            img.style.visibility = 'visible';
-            const dpr = window.devicePixelRatio || 1;
-            img.style.width = img.naturalWidth / dpr + 'px';
-            img.style.height = img.naturalHeight / dpr + 'px';
-          };
-          img.onerror = () => {
-            img.remove();
-          };
-          block.appendChild(img);
-        }
-
-        bodyEl.appendChild(block);
-        saveProject();
-      };
-
-      fileInput.click();
     }
 
     function createImageSlotBlock(label) {
@@ -617,16 +743,19 @@
         fileInput.type = 'file';
         fileInput.accept = 'image/*';
         fileInput.multiple = true;
+
         fileInput.onchange = async (e) => {
           const files = Array.from(e.target.files || []);
           if (!files.length) return;
+
           block.innerHTML = '';
           if (files.length > 1) {
-            block.classList.add('horizontal-scroll', 'media-block', 'natural-image-block');
+            block.classList.add('horizontal-scroll', 'media-block');
           } else {
-            block.classList.add('media-block', 'natural-image-block');
+            block.classList.add('media-block');
             block.classList.remove('horizontal-scroll');
           }
+
           for (const file of files) {
             const dataUrl = await readFileAsDataUrl(file);
             if (!dataUrl) continue;
@@ -636,18 +765,15 @@
             img.style.visibility = 'hidden';
             img.onload = () => {
               img.style.visibility = 'visible';
-              const dpr = window.devicePixelRatio || 1;
-              img.style.width = img.naturalWidth / dpr + 'px';
-              img.style.height = img.naturalHeight / dpr + 'px';
               saveProject();
             };
-            img.onerror = () => {
-              img.remove();
-            };
+            img.onerror = () => img.remove();
             block.appendChild(img);
           }
+
           saveProject();
         };
+
         fileInput.click();
       });
 
@@ -657,209 +783,12 @@
 
     function addQuickCorridorPreset() {
       const countRaw = prompt('Сколько секций в коридоре?', '6');
-      const count = Math.max(1, Math.min(30, Number.parseInt(countRaw, 10) || 6));
+      const count = Math.max(1, Math.min(30, Number.parseInt(countRaw || '6', 10) || 6));
 
       for (let i = 1; i <= count; i += 1) {
         bodyEl.appendChild(createImageSlotBlock('Секция ' + i + ' — добавить фото'));
-        if (i % 3 === 0) {
-          const branch = document.createElement('div');
-          branch.className = 'block body-block';
-          branch.innerHTML = '<button style=\"width:100%;padding:18px 14px;border:none;background:#353535;color:#fff;\">Ответвление / действие</button>';
-          bodyEl.appendChild(branch);
-        }
       }
       saveProject();
-    }
-
-    function toggleFix(section) {
-      const el = document.getElementById(section);
-      const isChecked = document.getElementById('fix-' + section).checked;
-
-      if (isChecked) {
-        el.classList.add('fixed');
-      } else {
-        el.classList.remove('fixed');
-      }
-
-      updateBodyPadding();
-      updateScrollHostMode();
-      updateThemeColorFromHeader();
-      saveProject();
-    }
-
-    function saveProject() {
-      const state = {
-        appMarkup: app.innerHTML,
-        fixHeader: fixHeader.checked,
-        fixFooter: fixFooter.checked,
-        blurEnabled: blurToggle.checked,
-        appIcon: faviconEl.getAttribute('href') || '',
-      };
-      localStorage.setItem('appLayoutV2', JSON.stringify(state));
-    }
-
-    function loadProject() {
-      const raw = localStorage.getItem('appLayoutV2');
-      if (!raw) return;
-
-      try {
-        const state = JSON.parse(raw);
-        if (state && state.appMarkup) {
-          app.innerHTML = state.appMarkup;
-        }
-        fixHeader.checked = Boolean(state.fixHeader);
-        fixFooter.checked = Boolean(state.fixFooter);
-        blurToggle.checked = state.blurEnabled !== false;
-        if (state.appIcon) faviconEl.setAttribute('href', state.appIcon);
-      } catch (e) {
-        console.warn('Не удалось загрузить сохраненный проект', e);
-      }
-    }
-
-    function applyStateFromHash() {
-      if (!location.hash.startsWith('#app=')) return;
-      try {
-        const encoded = location.hash.slice(5);
-        const decoded = decodeURIComponent(atob(encoded));
-        const state = JSON.parse(decoded);
-        if (state.appMarkup) app.innerHTML = state.appMarkup;
-        fixHeader.checked = Boolean(state.fixHeader);
-        fixFooter.checked = Boolean(state.fixFooter);
-        blurToggle.checked = state.blurEnabled !== false;
-        if (state.appIcon) faviconEl.setAttribute('href', state.appIcon);
-      } catch (e) {
-        console.warn('Не удалось применить состояние из ссылки', e);
-      }
-    }
-
-    function reacquireRefsAfterLoad() {
-      // after app.innerHTML replace we need current DOM refs again
-      headerEl = document.getElementById('header');
-      bodyEl = document.getElementById('body');
-      footerEl = document.getElementById('footer');
-      currentTarget = bodyEl;
-      headerEl.classList.remove('fixed');
-      footerEl.classList.remove('fixed');
-
-      if (!headerEl || !bodyEl || !footerEl) {
-        location.reload();
-      }
-    }
-
-    function setupEventDelegation() {
-      document.addEventListener('click', (event) => {
-        const targetRegion = event.target.closest('[data-target=\"body\"]');
-        if (targetRegion) currentTarget = bodyEl;
-      });
-
-      document.body.addEventListener('click', () => {
-        tapCount += 1;
-        clearTimeout(tapTimeout);
-        tapTimeout = setTimeout(() => {
-          if (tapCount >= 2) {
-            panelEl.classList.toggle('hidden');
-            document.body.classList.toggle('ui-hidden');
-          }
-          tapCount = 0;
-        }, 300);
-      });
-    }
-
-    function runRefresh() {
-      saveProject();
-      window.location.reload();
-    }
-
-    function setupPullToRefreshForBody() {
-      const pullState = { host: null };
-
-      const onTouchStart = (event) => {
-        const host = bodyEl;
-        if (host.scrollTop !== 0) return;
-        pullState.host = host;
-        touchStartY = event.touches[0].clientY;
-        isPulling = true;
-      };
-
-      const onTouchMove = (event) => {
-        if (!isPulling || !pullState.host) return;
-        const delta = event.touches[0].clientY - touchStartY;
-        if (delta > 80 && pullState.host.scrollTop === 0) {
-          isPulling = false;
-          pullState.host = null;
-          runRefresh();
-        }
-      };
-
-      const onTouchEnd = () => {
-        isPulling = false;
-        pullState.host = null;
-      };
-
-      bodyEl.addEventListener('touchstart', onTouchStart, { passive: true });
-      bodyEl.addEventListener('touchmove', onTouchMove, { passive: true });
-      bodyEl.addEventListener('touchend', onTouchEnd);
-    }
-
-    function setupButtons() {
-      document.getElementById('add-header-image').addEventListener('click', () => addImageBlock(headerEl));
-      document.getElementById('add-footer-image').addEventListener('click', () => addImageBlock(footerEl));
-      document.getElementById('add-image').addEventListener('click', () => addImageBlock(currentTarget));
-      document.getElementById('add-code').addEventListener('click', () => addCodeBlock(currentTarget));
-      document.getElementById('add-horizontal').addEventListener('click', () => addHorizontalScrollBlock(currentTarget));
-      document.getElementById('add-button-zone').addEventListener('click', () => addButtonZoneBlock(currentTarget));
-      document.getElementById('quick-corridor').addEventListener('click', addQuickCorridorPreset);
-      document.getElementById('set-header-color').addEventListener('click', () => {
-        const input = prompt('Введите цвет header (например #223344 или rgb(34,34,34))', window.getComputedStyle(headerEl).backgroundColor);
-        if (!input) return;
-        headerEl.style.background = input;
-        updateThemeColorFromHeader();
-        saveProject();
-      });
-      document.getElementById('set-app-icon').addEventListener('click', () => {
-        const fileInput = document.createElement('input');
-        fileInput.type = 'file';
-        fileInput.accept = 'image/*';
-        fileInput.onchange = async (e) => {
-          const file = e.target.files && e.target.files[0];
-          if (!file) return;
-          const dataUrl = await readFileAsDataUrl(file);
-          if (!dataUrl) return;
-          const newFavicon = document.createElement('link');
-newFavicon.rel = 'icon';
-newFavicon.type = file.type || 'image/png';
-newFavicon.href = dataUrl + '?v=' + Date.now(); // 🔥 анти-кэш
-
-const oldFavicon = document.getElementById('appFavicon');
-if (oldFavicon) oldFavicon.remove();
-
-newFavicon.id = 'appFavicon';
-document.head.appendChild(newFavicon);
-          saveProject();
-        };
-        fileInput.click();
-      });
-      document.getElementById('share-link').addEventListener('click', () => {
-        const state = localStorage.getItem('appLayoutV2');
-        if (!state) {
-          alert('Сначала сохраните проект.');
-          return;
-        }
-        const encoded = btoa(encodeURIComponent(state));
-        const url = `${location.origin}${location.pathname}#app=${encoded}`;
-        navigator.clipboard?.writeText(url).catch(() => {});
-        prompt('Ссылка готова (скопируйте):', url);
-      });
-
-      document.getElementById('save-now').addEventListener('click', saveProject);
-      document.getElementById('reset-layout').addEventListener('click', () => {
-        if (!confirm('Удалить сохраненный проект и перезагрузить страницу?')) return;
-        localStorage.removeItem('appLayoutV2');
-        location.reload();
-      });
-
-      fixHeader.addEventListener('change', () => toggleFix('header'));
-      fixFooter.addEventListener('change', () => toggleFix('footer'));
     }
 
     function openBottomSheet(html) {
@@ -878,77 +807,20 @@ document.head.appendChild(newFavicon);
     }
 
     function setupPrivacyBlurForAppSwitcher() {
-      const obscure = () => document.body.classList.add('app-obscured');
+      const obscure = () => {
+        if (blurToggle.checked) document.body.classList.add('app-obscured');
+      };
       const reveal = () => document.body.classList.remove('app-obscured');
 
       document.addEventListener('visibilitychange', () => {
-        if (!blurToggle.checked) return;
         if (document.visibilityState === 'hidden') obscure();
         if (document.visibilityState === 'visible') reveal();
       });
 
-      window.addEventListener('pagehide', () => {
-        if (blurToggle.checked) obscure();
-      });
-      window.addEventListener('pageshow', reveal);
-      window.addEventListener('blur', () => {
-        if (blurToggle.checked) obscure();
-      });
+      window.addEventListener('blur', obscure);
       window.addEventListener('focus', reveal);
-    }
-
-    function toHexColor(color) {
-      const match = (color || '').match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/i);
-      if (!match) return color;
-      const r = Number(match[1]).toString(16).padStart(2, '0');
-      const g = Number(match[2]).toString(16).padStart(2, '0');
-      const b = Number(match[3]).toString(16).padStart(2, '0');
-      return `#${r}${g}${b}`;
-    }
-
-    function sampleTopColorFromImage(img) {
-      try {
-        const canvas = document.createElement('canvas');
-        const w = Math.max(8, Math.min(64, img.naturalWidth));
-        canvas.width = w;
-        canvas.height = 1;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return '';
-        ctx.drawImage(img, 0, 0, w, 1);
-        const { data } = ctx.getImageData(0, 0, w, 1);
-        let r = 0, g = 0, b = 0;
-        for (let i = 0; i < data.length; i += 4) {
-          r += data[i];
-          g += data[i + 1];
-          b += data[i + 2];
-        }
-        const px = data.length / 4;
-        const rr = Math.round(r / px).toString(16).padStart(2, '0');
-        const gg = Math.round(g / px).toString(16).padStart(2, '0');
-        const bb = Math.round(b / px).toString(16).padStart(2, '0');
-        return `#${rr}${gg}${bb}`;
-      } catch {
-        return '';
-      }
-    }
-
-    function cleanupBrokenOrStaleImages() {
-      const images = document.querySelectorAll('img');
-      images.forEach((img) => {
-        const src = img.getAttribute('src') || '';
-        if (img.complete && img.naturalWidth === 0) {
-          img.remove();
-        }
-      });
-    }
-
-    function readFileAsDataUrl(file) {
-      return new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : '');
-        reader.onerror = () => resolve('');
-        reader.readAsDataURL(file);
-      });
+      window.addEventListener('pagehide', obscure);
+      window.addEventListener('pageshow', reveal);
     }
 
     function setupGlobalImageErrorCleanup() {
@@ -963,28 +835,332 @@ document.head.appendChild(newFavicon);
         true
       );
     }
+    function setupSectionResizeObserver() {
+      if (typeof ResizeObserver === 'undefined') return;
+      if (sectionResizeObserver) {
+        sectionResizeObserver.disconnect();
+      }
+      sectionResizeObserver = new ResizeObserver(() => {
+        updateBodyPadding();
+        updateThemeColorFromHeader();
+      });
+      sectionResizeObserver.observe(headerEl);
+      sectionResizeObserver.observe(footerEl);
+    }
 
-    function init() {
-      loadProject();
-      applyStateFromHash();
+    function setupPullToRefreshForBody() {
+      detachPullRefresh();
+
+      const onStart = (event) => {
+        if (event.target.closest('#control-panel, #bottom-sheet')) return;
+        if (bodyEl.scrollTop !== 0) return;
+        touchStartY = event.touches[0].clientY;
+        isPulling = true;
+      };
+
+      const onMove = (event) => {
+        if (!isPulling) return;
+        const delta = event.touches[0].clientY - touchStartY;
+        if (delta > 85 && bodyEl.scrollTop === 0) {
+          isPulling = false;
+          runRefresh();
+        }
+      };
+
+      const onEnd = () => {
+        isPulling = false;
+      };
+
+      bodyEl.addEventListener('touchstart', onStart, { passive: true });
+      bodyEl.addEventListener('touchmove', onMove, { passive: true });
+      bodyEl.addEventListener('touchend', onEnd);
+
+      detachPullRefresh = () => {
+        bodyEl.removeEventListener('touchstart', onStart);
+        bodyEl.removeEventListener('touchmove', onMove);
+        bodyEl.removeEventListener('touchend', onEnd);
+      };
+    }
+
+    function toggleFix(section) {
+      const el = document.getElementById(section);
+      const isChecked = document.getElementById('fix-' + section).checked;
+      if (isChecked) {
+        el.classList.add('fixed');
+      } else {
+        el.classList.remove('fixed');
+      }
+      updateBodyPadding();
+      updateThemeColorFromHeader();
+      saveProject();
+    }
+
+    function snapshotCurrentState() {
+      return {
+        appMarkup: app.innerHTML,
+        fixHeader: fixHeader.checked,
+        fixFooter: fixFooter.checked,
+        blurEnabled: blurToggle.checked,
+        appIcon: faviconEl?.getAttribute('href') || '',
+        appTitle: document.title || 'Конструктор приложений',
+      };
+    }
+
+    function saveAllScreens() {
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({
+          screens: screensState,
+        })
+      );
+    }
+
+    function saveProject() {
+      ensureScreenExists(currentScreenId);
+      screensState[currentScreenId] = snapshotCurrentState();
+      saveAllScreens();
+      renderScreenLinks();
+    }
+
+    function applyScreenState(state) {
+      const safe = state || defaultScreenState();
+      app.innerHTML = safe.appMarkup || initialAppMarkup;
       reacquireRefsAfterLoad();
-      cleanupBrokenOrStaleImages();
+
+      fixHeader.checked = Boolean(safe.fixHeader);
+      fixFooter.checked = Boolean(safe.fixFooter);
+      blurToggle.checked = safe.blurEnabled !== false;
+
+      if (safe.appIcon && faviconEl) {
+        faviconEl.href = safe.appIcon;
+      }
+
+      document.title = safe.appTitle || 'Конструктор приложений';
+
       toggleFix('header');
       toggleFix('footer');
       updateThemeColorFromHeader();
-      updateScrollHostMode();
+      updateBodyPadding();
+    }
+
+    function migrateLegacyIfNeeded() {
+      const raw = localStorage.getItem(LEGACY_KEY);
+      if (!raw) return;
+
+      try {
+        const legacy = JSON.parse(raw);
+        if (legacy && typeof legacy === 'object') {
+          screensState.main = {
+            appMarkup: legacy.appMarkup || initialAppMarkup,
+            fixHeader: Boolean(legacy.fixHeader),
+            fixFooter: Boolean(legacy.fixFooter),
+            blurEnabled: legacy.blurEnabled !== false,
+            appIcon: legacy.appIcon || 'icon.png',
+            appTitle: document.title || 'Конструктор приложений',
+          };
+          saveAllScreens();
+          localStorage.removeItem(LEGACY_KEY);
+        }
+      } catch {
+        localStorage.removeItem(LEGACY_KEY);
+      }
+    }
+
+    function loadScreensFromStorage() {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+
+      try {
+        const parsed = JSON.parse(raw);
+        const screens = parsed && parsed.screens;
+        if (screens && typeof screens === 'object') {
+          screensState = screens;
+        }
+      } catch {
+        screensState = {};
+      }
+    }
+
+    function loadProjectForCurrentScreen() {
+      ensureScreenExists(currentScreenId);
+      applyScreenState(screensState[currentScreenId]);
+    }
+
+    function createSecondScreen() {
+      const rawId = prompt('ID нового экрана (латиница/цифры)', 'screen2') || 'screen2';
+      const screenId = rawId.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '');
+      if (!screenId) {
+        alert('Некорректный ID экрана.');
+        return;
+      }
+
+      if (!screensState[screenId]) {
+        const base = defaultScreenState();
+        base.appTitle = 'Экран: ' + screenId;
+        screensState[screenId] = base;
+      }
+
+      saveAllScreens();
+      setScreenHash(screenId);
+    }
+
+    async function copyTextToClipboard(text) {
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(text);
+          return true;
+        }
+      } catch {
+        // noop
+      }
+      return false;
+    }
+
+    async function copyCurrentScreenLink() {
+      const url = buildScreenUrl(currentScreenId);
+      const ok = await copyTextToClipboard(url);
+      if (!ok) {
+        prompt('Ссылка экрана:', url);
+      }
+    }
+
+    function renderScreenLinks() {
+      const ids = Object.keys(screensState).sort((a, b) =>
+        a === 'main' ? -1 : b === 'main' ? 1 : a.localeCompare(b)
+      );
+
+      linksBox.innerHTML = '';
+      const title = document.createElement('div');
+      title.className = 'links-title';
+      title.textContent = 'Ссылки экранов';
+      linksBox.appendChild(title);
+
+      ids.forEach((id) => {
+        const row = document.createElement('button');
+        row.type = 'button';
+        const mark = id === currentScreenId ? ' (текущий)' : '';
+        row.textContent = id + mark + ': ' + buildScreenUrl(id);
+        row.addEventListener('click', async () => {
+          const url = buildScreenUrl(id);
+          await copyTextToClipboard(url);
+          setScreenHash(id);
+        });
+        linksBox.appendChild(row);
+      });
+    }
+
+    function reacquireRefsAfterLoad() {
+      headerEl = document.getElementById('header');
+      bodyEl = document.getElementById('body');
+      footerEl = document.getElementById('footer');
+
+      if (!headerEl || !bodyEl || !footerEl) {
+        location.reload();
+      }
+    }
+
+    function runRefresh() {
+      saveProject();
+      window.location.reload();
+    }
+
+    function setupButtons() {
+      document.getElementById('add-header-image').addEventListener('click', () => addImageBlock(headerEl));
+      document.getElementById('add-footer-image').addEventListener('click', () => addImageBlock(footerEl));
+      document.getElementById('add-header-code').addEventListener('click', () => setSectionCode(headerEl));
+      document.getElementById('add-footer-code').addEventListener('click', () => setSectionCode(footerEl));
+      document.getElementById('add-image').addEventListener('click', () => addImageBlock(bodyEl));
+      document.getElementById('add-code').addEventListener('click', () => addCodeBlock(bodyEl));
+      document.getElementById('add-horizontal').addEventListener('click', () => addHorizontalScrollBlock(bodyEl));
+      document.getElementById('add-button-zone').addEventListener('click', () => addButtonZoneBlock(bodyEl));
+      document.getElementById('quick-corridor').addEventListener('click', addQuickCorridorPreset);
+
+      document.getElementById('set-app-title').addEventListener('click', () => {
+        const title = prompt('Введите название приложения', document.title || 'Конструктор приложений');
+        if (!title) return;
+        document.title = title;
+        saveProject();
+      });
+
+      document.getElementById('set-header-color').addEventListener('click', () => {
+        const input = prompt('Введите цвет header (например #223344)', window.getComputedStyle(headerEl).backgroundColor);
+        if (!input) return;
+        headerEl.style.background = input;
+        updateThemeColorFromHeader();
+        saveProject();
+      });
+
+      document.getElementById('set-app-icon').addEventListener('click', () => {
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.accept = 'image/*';
+        fileInput.onchange = async (e) => {
+          const file = e.target.files && e.target.files[0];
+          if (!file) return;
+          const dataUrl = await readFileAsDataUrl(file);
+          if (!dataUrl || !faviconEl) return;
+          faviconEl.href = dataUrl;
+          faviconEl.type = file.type || 'image/png';
+          saveProject();
+        };
+        fileInput.click();
+      });
+
+      document.getElementById('create-screen').addEventListener('click', createSecondScreen);
+      document.getElementById('copy-current-link').addEventListener('click', copyCurrentScreenLink);
+      document.getElementById('share-link').addEventListener('click', copyCurrentScreenLink);
+      document.getElementById('save-now').addEventListener('click', saveProject);
+
+      document.getElementById('reset-layout').addEventListener('click', () => {
+        if (!confirm('Удалить все экраны и перезагрузить страницу?')) return;
+        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(LEGACY_KEY);
+        location.hash = '#screen=main';
+        location.reload();
+      });
+
+      fixHeader.addEventListener('change', () => toggleFix('header'));
+      fixFooter.addEventListener('change', () => toggleFix('footer'));
+      blurToggle.addEventListener('change', saveProject);
+    }
+
+    function handleHashChange() {
+      const nextId = parseScreenIdFromHash();
+      if (nextId === currentScreenId) return;
+      saveProject();
+      currentScreenId = nextId;
+      loadProjectForCurrentScreen();
+      setupSectionResizeObserver();
+      setupPullToRefreshForBody();
+      renderScreenLinks();
+    }
+
+    function init() {
+      currentScreenId = parseScreenIdFromHash();
+      if (!location.hash) {
+        setScreenHash(currentScreenId, true);
+      }
+
+      migrateLegacyIfNeeded();
+      loadScreensFromStorage();
+      ensureScreenExists('main');
+      ensureScreenExists(currentScreenId);
+      loadProjectForCurrentScreen();
+
       setupButtons();
-      setupEventDelegation();
+      setupSectionResizeObserver();
       setupPullToRefreshForBody();
       setupGlobalImageErrorCleanup();
       setupPrivacyBlurForAppSwitcher();
-      updateBodyPadding();
+      renderScreenLinks();
+
       document.getElementById('sheet-backdrop').addEventListener('click', closeBottomSheet);
+      window.addEventListener('hashchange', handleHashChange);
+      window.addEventListener('beforeunload', saveProject);
+      window.addEventListener('resize', updateBodyPadding);
     }
 
     init();
-    window.addEventListener('beforeunload', saveProject);
-    window.addEventListener('resize', updateBodyPadding);
   </script>
 </body>
 </html>
