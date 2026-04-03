@@ -223,20 +223,16 @@
   overflow-x: auto;
   overflow-y: hidden;
   gap: 0;
-  scroll-snap-type: x mandatory;
   scrollbar-width: none;
   -ms-overflow-style: none;
-  touch-action: pan-x pan-y;
-
-  height: 100vh; /* 🔥 ВАЖНО: задай высоту */
 }
 
 .horizontal-scroll img {
-  flex: 0 0 100%;     /* каждый слайд = ширина экрана */
-  height: 100%;       /* подгон под контейнер */
-  width: auto;        /* сохраняем пропорции */
-  object-fit: contain; /* без искажений */
-  scroll-snap-align: center;
+  flex: 0 0 auto;
+  height: auto;     /* сохраняем реальную высоту */
+  width: auto;      /* сохраняем ширину */
+  max-width: none;  /* 🔥 убираем ограничения */
+  display: block;
 }
 
     .natural-image-block img {
