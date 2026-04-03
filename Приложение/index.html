@@ -825,8 +825,16 @@
           if (!file) return;
           const dataUrl = await readFileAsDataUrl(file);
           if (!dataUrl) return;
-          faviconEl.setAttribute('href', dataUrl);
-          faviconEl.setAttribute('type', file.type || 'image/png');
+          const newFavicon = document.createElement('link');
+newFavicon.rel = 'icon';
+newFavicon.type = file.type || 'image/png';
+newFavicon.href = dataUrl + '?v=' + Date.now(); // 🔥 анти-кэш
+
+const oldFavicon = document.getElementById('appFavicon');
+if (oldFavicon) oldFavicon.remove();
+
+newFavicon.id = 'appFavicon';
+document.head.appendChild(newFavicon);
           saveProject();
         };
         fileInput.click();
