@@ -26,7 +26,7 @@
     html,
     body {
       height: 100%;
-      overflow: auto;
+      overflow: hidden;
     }
 
     body {
@@ -35,16 +35,16 @@
       background: var(--body-bg);
       color: var(--text);
       -webkit-overflow-scrolling: touch;
-      overscroll-behavior: auto;
+      overscroll-behavior: none;
     }
 
     #app {
       display: flex;
       flex-direction: column;
       width: 100%;
-      height: auto;
+      height: 100dvh;
       min-height: 100dvh;
-      overflow: visible;
+      overflow: hidden;
       transition: filter 0.2s ease;
       will-change: filter;
     }
@@ -109,7 +109,8 @@
 
     #body {
       flex: 1 1 auto;
-      overflow: visible;
+      overflow-y: auto;
+      overflow-x: hidden;
       width: 100%;
       min-height: 0;
       padding-top: 0;
@@ -335,11 +336,34 @@
     #bottom-sheet.visible {
       transform: translateY(0);
     }
+
+    #toast {
+      position: fixed;
+      left: 50%;
+      bottom: max(16px, env(safe-area-inset-bottom));
+      transform: translateX(-50%) translateY(12px);
+      background: rgba(20, 20, 20, 0.92);
+      color: #fff;
+      padding: 10px 14px;
+      border-radius: 999px;
+      font-size: 13px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      z-index: 20000;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+    }
+
+    #toast.visible {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
   </style>
 </head>
 <body>
   <div id="sheet-backdrop"></div>
   <div id="bottom-sheet"></div>
+  <div id="toast"></div>
 
   <div id="app">
     <div id="header" class="block"></div>
@@ -400,6 +424,9 @@
     let sectionResizeObserver;
     let lastTapTime = 0;
     let manifestUrl = '';
+    let currentIconLarge = 'icon.png';
+    let currentIconSmall = 'icon.png';
+    let toastTimer;
 
     const initialAppMarkup = app.innerHTML;
     let currentScreenId = 'main';
@@ -412,6 +439,7 @@
         fixFooter: false,
         blurEnabled: true,
         appIcon: 'icon.png',
+        appIconSmall: 'icon.png',
         appTitle: 'Конструктор приложений',
       };
     }
@@ -487,6 +515,7 @@
       if (!manifestEl) return;
       const safe = state || snapshotCurrentState();
       const iconSrc = safe.appIcon || 'icon.png';
+      const iconSmall = safe.appIconSmall || iconSrc;
       const manifest = {
         name: safe.appTitle || 'Конструктор приложений',
         short_name: safe.appTitle || 'Конструктор приложений',
@@ -495,6 +524,11 @@
         background_color: '#000000',
         theme_color: themeMeta.getAttribute('content') || '#000000',
         icons: [
+          {
+            src: iconSmall,
+            sizes: '192x192',
+            type: 'image/png',
+          },
           {
             src: iconSrc,
             sizes: '512x512',
@@ -508,12 +542,62 @@
         manifestUrl = URL.createObjectURL(blob);
         manifestEl.href = manifestUrl;
         if (touchIconEl) {
-          touchIconEl.href = iconSrc;
+          touchIconEl.href = iconSmall;
         }
       } catch {
         // noop
       }
     }
+
+    function showToast(message, duration = 1600) {
+      const toast = document.getElementById('toast');
+      if (!toast) return;
+      toast.textContent = message;
+      toast.classList.add('visible');
+      if (toastTimer) window.clearTimeout(toastTimer);
+      toastTimer = window.setTimeout(() => {
+        toast.classList.remove('visible');
+      }, duration);
+    }
+
+    function resizeImageDataUrl(dataUrl, size) {
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = size;
+          canvas.height = size;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            resolve(dataUrl);
+            return;
+          }
+          ctx.clearRect(0, 0, size, size);
+          ctx.drawImage(img, 0, 0, size, size);
+          try {
+            resolve(canvas.toDataURL('image/png'));
+          } catch {
+            resolve(dataUrl);
+          }
+        };
+        img.onerror = () => resolve(dataUrl);
+        img.src = dataUrl;
+      });
+    }
+
+    function applyAppIcon(iconLarge, iconSmall) {
+      currentIconLarge = iconLarge || 'icon.png';
+      currentIconSmall = iconSmall || currentIconLarge;
+      if (faviconEl) {
+        faviconEl.href = currentIconSmall;
+        faviconEl.type = 'image/png';
+      }
+      if (touchIconEl) {
+        touchIconEl.href = currentIconSmall;
+      }
+      updateManifestFromState(snapshotCurrentState());
+    }
+
 
     function updateBodyPadding() {
       const headerHeight = headerEl.offsetHeight;
@@ -946,7 +1030,53 @@
     }
 
     function setupPullToRefreshForBody() {
-      // No custom pull-to-refresh. Use browser-native refresh.
+      let startX = 0;
+      let startY = 0;
+      let pulling = false;
+      let triggered = false;
+      const threshold = 80;
+
+      const onStart = (event) => {
+        if (!bodyEl) return;
+        if (!event.touches || event.touches.length !== 1) return;
+        if (bodyEl.scrollTop > 0) return;
+        const touch = event.touches[0];
+        startX = touch.clientX;
+        startY = touch.clientY;
+        pulling = true;
+        triggered = false;
+      };
+
+      const onMove = (event) => {
+        if (!pulling || !event.touches || event.touches.length !== 1) return;
+        const touch = event.touches[0];
+        const dx = touch.clientX - startX;
+        const dy = touch.clientY - startY;
+        if (dy <= 0) {
+          pulling = false;
+          return;
+        }
+        if (Math.abs(dx) > Math.abs(dy)) {
+          pulling = false;
+          return;
+        }
+        if (dy > threshold) {
+          triggered = true;
+        }
+      };
+
+      const onEnd = () => {
+        if (pulling && triggered) {
+          runRefresh();
+        }
+        pulling = false;
+        triggered = false;
+      };
+
+      bodyEl.addEventListener('touchstart', onStart, { passive: true });
+      bodyEl.addEventListener('touchmove', onMove, { passive: true });
+      bodyEl.addEventListener('touchend', onEnd);
+      bodyEl.addEventListener('touchcancel', onEnd);
     }
 
     function toggleFix(section) {
@@ -968,7 +1098,8 @@
         fixHeader: fixHeader.checked,
         fixFooter: fixFooter.checked,
         blurEnabled: blurToggle.checked,
-        appIcon: faviconEl?.getAttribute('href') || '',
+        appIcon: currentIconLarge || faviconEl?.getAttribute('href') || '',
+        appIconSmall: currentIconSmall || faviconEl?.getAttribute('href') || '',
         appTitle: document.title || 'Конструктор приложений',
       };
     }
@@ -1000,7 +1131,7 @@
       blurToggle.checked = safe.blurEnabled !== false;
 
       if (safe.appIcon && faviconEl) {
-        faviconEl.href = safe.appIcon;
+        applyAppIcon(safe.appIcon, safe.appIconSmall || safe.appIcon);
       }
 
       document.title = safe.appTitle || 'Конструктор приложений';
@@ -1025,6 +1156,7 @@
             fixFooter: Boolean(legacy.fixFooter),
             blurEnabled: legacy.blurEnabled !== false,
             appIcon: legacy.appIcon || 'icon.png',
+            appIconSmall: legacy.appIcon || 'icon.png',
             appTitle: document.title || 'Конструктор приложений',
           };
           saveAllScreens();
@@ -1086,9 +1218,10 @@
     }
 
     function getShareState() {
-      const state = screensState[currentScreenId] || snapshotCurrentState();
+      const state = snapshotCurrentState();
       return {
         appIcon: state.appIcon || '',
+        appIconSmall: state.appIconSmall || state.appIcon || '',
         appTitle: state.appTitle || '',
       };
     }
@@ -1100,6 +1233,10 @@
       const next = {
         ...current,
         appIcon: typeof incoming.appIcon === 'string' ? incoming.appIcon : current.appIcon,
+        appIconSmall:
+          typeof incoming.appIconSmall === 'string'
+            ? incoming.appIconSmall
+            : current.appIconSmall || current.appIcon,
         appTitle: typeof incoming.appTitle === 'string' ? incoming.appTitle : current.appTitle,
       };
       screensState[currentScreenId] = next;
@@ -1108,11 +1245,15 @@
     }
 
     async function copyCurrentScreenLink() {
+      saveProject();
       const url = buildShareUrl(currentScreenId, getShareState());
       const ok = await copyTextToClipboard(url);
       if (!ok) {
         prompt('Ссылка экрана:', url);
+        showToast('Ссылка готова');
+        return;
       }
+      showToast('Ссылка скопирована');
     }
 
     function renderScreenLinks() {
@@ -1194,10 +1335,12 @@
           const file = e.target.files && e.target.files[0];
           if (!file) return;
           const dataUrl = await readFileAsDataUrl(file);
-          if (!dataUrl || !faviconEl) return;
-          faviconEl.href = dataUrl;
-          faviconEl.type = file.type || 'image/png';
-          updateManifestFromState(snapshotCurrentState());
+          if (!dataUrl) return;
+          const [icon512, icon192] = await Promise.all([
+            resizeImageDataUrl(dataUrl, 512),
+            resizeImageDataUrl(dataUrl, 192),
+          ]);
+          applyAppIcon(icon512, icon192);
           saveProject();
         };
         fileInput.click();
@@ -1325,6 +1468,7 @@
       setupPrivacyBlurForAppSwitcher();
       renderScreenLinks();
       setupDoubleTapToToggleMenu();
+      setupPullToRefreshForBody();
 
       document.getElementById('sheet-backdrop').addEventListener('click', closeBottomSheet);
       window.addEventListener('hashchange', handleHashChange);
