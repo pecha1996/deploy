@@ -219,25 +219,24 @@
     }
 
     .horizontal-scroll {
-      display: flex;
-      overflow-x: auto;
-      overflow-y: hidden;
-      gap: 0;
-      scroll-snap-type: x mandatory;
-      scrollbar-width: none;
-      -ms-overflow-style: none;
-      touch-action: pan-x pan-y;
-    }
-    
-    .horizontal-scroll img {
-  flex-shrink: 0;
-  width: 100vw;
-  height: auto; /* ключевая строка */
-  max-width: none !important;
-  min-width: 0 !important;
-  min-height: 0 !important;
-  object-fit: contain;
-  scroll-snap-align: start;
+  display: flex;
+  overflow-x: auto;
+  overflow-y: hidden;
+  gap: 0;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  touch-action: pan-x pan-y;
+
+  height: 100vh; /* 🔥 ВАЖНО: задай высоту */
+}
+
+.horizontal-scroll img {
+  flex: 0 0 100%;     /* каждый слайд = ширина экрана */
+  height: 100%;       /* подгон под контейнер */
+  width: auto;        /* сохраняем пропорции */
+  object-fit: contain; /* без искажений */
+  scroll-snap-align: center;
 }
 
     .natural-image-block img {
