@@ -245,6 +245,10 @@
       overflow: auto;
     }
 
+    #control-panel.hidden {
+      transform: translateX(120%);
+    }
+
     #control-panel button {
       padding: 8px 10px;
       cursor: pointer;
@@ -362,6 +366,7 @@
     <button type="button" id="create-screen">Создать 2-й экран</button>
     <button type="button" id="copy-current-link">Скопировать ссылку экрана</button>
     <button type="button" id="share-link">Создать ссылку</button>
+    <button type="button" id="toggle-panel">Скрыть меню</button>
 
     <button type="button" id="save-now">Сохранить</button>
     <button type="button" id="reset-layout">Сбросить проект</button>
@@ -384,6 +389,7 @@
     const fixFooter = document.getElementById('fix-footer');
     const blurToggle = document.getElementById('enable-privacy-blur');
     const linksBox = document.getElementById('screen-links');
+    const panelEl = document.getElementById('control-panel');
 
     let bodyEl;
     let headerEl;
@@ -392,6 +398,7 @@
     let isPulling = false;
     let sectionResizeObserver;
     let detachPullRefresh = () => {};
+    let lastTapTime = 0;
 
     const initialAppMarkup = app.innerHTML;
     let currentScreenId = 'main';
@@ -426,8 +433,32 @@
       }
     }
 
+    function encodeStateToHash(state) {
+      try {
+        const json = JSON.stringify(state || {});
+        return btoa(unescape(encodeURIComponent(json)));
+      } catch {
+        return '';
+      }
+    }
+
+    function decodeStateFromHash(encoded) {
+      try {
+        const json = decodeURIComponent(escape(atob(encoded)));
+        return JSON.parse(json);
+      } catch {
+        return null;
+      }
+    }
+
     function buildScreenUrl(screenId) {
       return location.origin + location.pathname + '#screen=' + encodeURIComponent(screenId);
+    }
+
+    function buildShareUrl(screenId, state) {
+      const payload = encodeStateToHash(state);
+      const hash = '#screen=' + encodeURIComponent(screenId) + (payload ? '&app=' + encodeURIComponent(payload) : '');
+      return location.origin + location.pathname + hash;
     }
 
     function normalizeTarget(target) {
@@ -1016,8 +1047,30 @@
       return false;
     }
 
+    function getShareState() {
+      const state = screensState[currentScreenId] || snapshotCurrentState();
+      return {
+        appIcon: state.appIcon || '',
+        appTitle: state.appTitle || '',
+      };
+    }
+
+    function applyIncomingShare(incoming) {
+      if (!incoming || typeof incoming !== 'object') return;
+      ensureScreenExists(currentScreenId);
+      const current = screensState[currentScreenId];
+      const next = {
+        ...current,
+        appIcon: typeof incoming.appIcon === 'string' ? incoming.appIcon : current.appIcon,
+        appTitle: typeof incoming.appTitle === 'string' ? incoming.appTitle : current.appTitle,
+      };
+      screensState[currentScreenId] = next;
+      applyScreenState(next);
+      saveProject();
+    }
+
     async function copyCurrentScreenLink() {
-      const url = buildScreenUrl(currentScreenId);
+      const url = buildShareUrl(currentScreenId, getShareState());
       const ok = await copyTextToClipboard(url);
       if (!ok) {
         prompt('Ссылка экрана:', url);
@@ -1039,9 +1092,13 @@
         const row = document.createElement('button');
         row.type = 'button';
         const mark = id === currentScreenId ? ' (текущий)' : '';
-        row.textContent = id + mark + ': ' + buildScreenUrl(id);
+        const shareState = {
+          appIcon: (screensState[id] && screensState[id].appIcon) || '',
+          appTitle: (screensState[id] && screensState[id].appTitle) || '',
+        };
+        row.textContent = id + mark + ': ' + buildShareUrl(id, shareState);
         row.addEventListener('click', async () => {
-          const url = buildScreenUrl(id);
+          const url = buildShareUrl(id, shareState);
           await copyTextToClipboard(url);
           setScreenHash(id);
         });
@@ -1109,6 +1166,9 @@
       document.getElementById('create-screen').addEventListener('click', createSecondScreen);
       document.getElementById('copy-current-link').addEventListener('click', copyCurrentScreenLink);
       document.getElementById('share-link').addEventListener('click', copyCurrentScreenLink);
+      document.getElementById('toggle-panel').addEventListener('click', () => {
+        panelEl.classList.toggle('hidden');
+      });
       document.getElementById('save-now').addEventListener('click', saveProject);
 
       document.getElementById('reset-layout').addEventListener('click', () => {
@@ -1124,12 +1184,34 @@
       blurToggle.addEventListener('change', saveProject);
     }
 
+    function setupDoubleTapToToggleMenu() {
+      const onTap = (event) => {
+        if (event.target.closest('#control-panel, #bottom-sheet')) return;
+        const now = Date.now();
+        if (now - lastTapTime < 300) {
+          panelEl.classList.toggle('hidden');
+          lastTapTime = 0;
+          return;
+        }
+        lastTapTime = now;
+      };
+
+      document.body.addEventListener('click', onTap);
+      document.body.addEventListener('touchend', onTap);
+    }
+
     function handleHashChange() {
       const nextId = parseScreenIdFromHash();
       if (nextId === currentScreenId) return;
       saveProject();
       currentScreenId = nextId;
       loadProjectForCurrentScreen();
+      const params = new URLSearchParams((location.hash || '').replace(/^#/, ''));
+      const encoded = params.get('app');
+      if (encoded) {
+        const incoming = decodeStateFromHash(encoded);
+        applyIncomingShare(incoming);
+      }
       setupSectionResizeObserver();
       setupPullToRefreshForBody();
       renderScreenLinks();
@@ -1146,6 +1228,12 @@
       ensureScreenExists('main');
       ensureScreenExists(currentScreenId);
       loadProjectForCurrentScreen();
+      const params = new URLSearchParams((location.hash || '').replace(/^#/, ''));
+      const encoded = params.get('app');
+      if (encoded) {
+        const incoming = decodeStateFromHash(encoded);
+        applyIncomingShare(incoming);
+      }
 
       setupButtons();
       setupSectionResizeObserver();
@@ -1153,6 +1241,7 @@
       setupGlobalImageErrorCleanup();
       setupPrivacyBlurForAppSwitcher();
       renderScreenLinks();
+      setupDoubleTapToToggleMenu();
 
       document.getElementById('sheet-backdrop').addEventListener('click', closeBottomSheet);
       window.addEventListener('hashchange', handleHashChange);
