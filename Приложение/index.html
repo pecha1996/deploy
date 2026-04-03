@@ -1,4 +1,5 @@
-<!DOCTYPE html> 
+
+<!DOCTYPE html>
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
@@ -6,6 +7,8 @@
   <title>Конструктор приложений</title>
   <meta name="theme-color" content="#222" id="themeColorMeta" />
   <link rel="icon" id="appFavicon" href="icon.png" type="image/png" />
+  <link rel="manifest" id="appManifest" href="manifest.json" />
+  <link rel="apple-touch-icon" id="appTouchIcon" href="icon.png" />
   <style>
     :root {
       --panel-bg: rgba(0, 0, 0, 0.72);
@@ -23,7 +26,7 @@
     html,
     body {
       height: 100%;
-      overflow: hidden;
+      overflow: auto;
     }
 
     body {
@@ -32,16 +35,16 @@
       background: var(--body-bg);
       color: var(--text);
       -webkit-overflow-scrolling: touch;
-      overscroll-behavior: none;
+      overscroll-behavior: auto;
     }
 
     #app {
       display: flex;
       flex-direction: column;
       width: 100%;
-      height: 100dvh;
+      height: auto;
       min-height: 100dvh;
-      overflow: hidden;
+      overflow: visible;
       transition: filter 0.2s ease;
       will-change: filter;
     }
@@ -106,8 +109,7 @@
 
     #body {
       flex: 1 1 auto;
-      overflow-y: auto;
-      overflow-x: hidden;
+      overflow: visible;
       width: 100%;
       min-height: 0;
       padding-top: 0;
@@ -384,6 +386,8 @@
     const app = document.getElementById('app');
     const themeMeta = document.getElementById('themeColorMeta');
     const faviconEl = document.getElementById('appFavicon');
+    const manifestEl = document.getElementById('appManifest');
+    const touchIconEl = document.getElementById('appTouchIcon');
     const fixHeader = document.getElementById('fix-header');
     const fixFooter = document.getElementById('fix-footer');
     const blurToggle = document.getElementById('enable-privacy-blur');
@@ -393,11 +397,9 @@
     let bodyEl;
     let headerEl;
     let footerEl;
-    let touchStartY = 0;
-    let isPulling = false;
     let sectionResizeObserver;
-    let detachPullRefresh = () => {};
     let lastTapTime = 0;
+    let manifestUrl = '';
 
     const initialAppMarkup = app.innerHTML;
     let currentScreenId = 'main';
@@ -479,6 +481,38 @@
     function updateThemeColorFromHeader() {
       const computedColor = window.getComputedStyle(headerEl).backgroundColor;
       themeMeta.setAttribute('content', computedColor || '#222');
+    }
+
+    function updateManifestFromState(state) {
+      if (!manifestEl) return;
+      const safe = state || snapshotCurrentState();
+      const iconSrc = safe.appIcon || 'icon.png';
+      const manifest = {
+        name: safe.appTitle || 'Конструктор приложений',
+        short_name: safe.appTitle || 'Конструктор приложений',
+        start_url: location.pathname + location.hash,
+        display: 'standalone',
+        background_color: '#000000',
+        theme_color: themeMeta.getAttribute('content') || '#000000',
+        icons: [
+          {
+            src: iconSrc,
+            sizes: '512x512',
+            type: 'image/png',
+          },
+        ],
+      };
+      try {
+        const blob = new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' });
+        if (manifestUrl) URL.revokeObjectURL(manifestUrl);
+        manifestUrl = URL.createObjectURL(blob);
+        manifestEl.href = manifestUrl;
+        if (touchIconEl) {
+          touchIconEl.href = iconSrc;
+        }
+      } catch {
+        // noop
+      }
     }
 
     function updateBodyPadding() {
@@ -736,8 +770,20 @@
       button.style.background = '#2c2c2c';
       button.style.color = '#fff';
 
-      const actionType = prompt('Тип действия: url / sheet', 'url');
-      if ((actionType || '').toLowerCase() === 'sheet') {
+      const actionType = prompt('Тип действия: url / sheet / screen', 'url');
+      if ((actionType || '').toLowerCase() === 'screen') {
+        const screenId = prompt('ID экрана для открытия', 'screen2') || '';
+        if (!screenId) return;
+        const mode = (prompt('Открыть как: new / sheet', 'sheet') || 'sheet').toLowerCase().trim();
+        if (mode === 'new') {
+          const url = buildScreenUrl(screenId);
+          button.addEventListener('click', () => window.open(url, '_blank', 'noopener,noreferrer'));
+        } else {
+          const offsetRaw = prompt('Отступ сверху (px)', '120');
+          const offset = Math.max(0, Math.min(600, Number.parseInt(offsetRaw || '120', 10) || 0));
+          button.addEventListener('click', () => openScreenSheet(screenId, offset));
+        }
+      } else if ((actionType || '').toLowerCase() === 'sheet') {
         const sheetHtml = prompt('HTML контент для нижнего окна', '<h3>Нижнее окно</h3><p>Ваш контент</p>') || '';
         button.addEventListener('click', () => openBottomSheet(sheetHtml));
       } else {
@@ -824,7 +870,28 @@
     function openBottomSheet(html) {
       const backdrop = document.getElementById('sheet-backdrop');
       const sheet = document.getElementById('bottom-sheet');
+      sheet.style.top = '';
+      sheet.style.height = '';
+      sheet.style.maxHeight = '';
       sheet.innerHTML = html;
+      backdrop.classList.add('visible');
+      sheet.classList.add('visible');
+    }
+
+    function openScreenSheet(screenId, topOffset) {
+      const backdrop = document.getElementById('sheet-backdrop');
+      const sheet = document.getElementById('bottom-sheet');
+      const url = buildScreenUrl(screenId);
+      const frame = document.createElement('iframe');
+      frame.className = 'section-frame';
+      frame.style.width = '100%';
+      frame.style.border = 'none';
+      frame.src = url;
+      sheet.innerHTML = '';
+      sheet.style.top = Math.max(0, topOffset) + 'px';
+      sheet.style.height = 'calc(100vh - ' + Math.max(0, topOffset) + 'px)';
+      sheet.style.maxHeight = 'none';
+      sheet.appendChild(frame);
       backdrop.classList.add('visible');
       sheet.classList.add('visible');
     }
@@ -879,37 +946,7 @@
     }
 
     function setupPullToRefreshForBody() {
-      detachPullRefresh();
-
-      const onStart = (event) => {
-        if (event.target.closest('#control-panel, #bottom-sheet')) return;
-        if (bodyEl.scrollTop !== 0) return;
-        touchStartY = event.touches[0].clientY;
-        isPulling = true;
-      };
-
-      const onMove = (event) => {
-        if (!isPulling) return;
-        const delta = event.touches[0].clientY - touchStartY;
-        if (delta > 85 && bodyEl.scrollTop === 0) {
-          isPulling = false;
-          runRefresh();
-        }
-      };
-
-      const onEnd = () => {
-        isPulling = false;
-      };
-
-      bodyEl.addEventListener('touchstart', onStart, { passive: true });
-      bodyEl.addEventListener('touchmove', onMove, { passive: true });
-      bodyEl.addEventListener('touchend', onEnd);
-
-      detachPullRefresh = () => {
-        bodyEl.removeEventListener('touchstart', onStart);
-        bodyEl.removeEventListener('touchmove', onMove);
-        bodyEl.removeEventListener('touchend', onEnd);
-      };
+      // No custom pull-to-refresh. Use browser-native refresh.
     }
 
     function toggleFix(section) {
@@ -950,6 +987,7 @@
       screensState[currentScreenId] = snapshotCurrentState();
       saveAllScreens();
       renderScreenLinks();
+      updateManifestFromState(screensState[currentScreenId]);
     }
 
     function applyScreenState(state) {
@@ -971,6 +1009,7 @@
       toggleFix('footer');
       updateThemeColorFromHeader();
       updateBodyPadding();
+      updateManifestFromState(safe);
     }
 
     function migrateLegacyIfNeeded() {
@@ -1135,6 +1174,7 @@
         const title = prompt('Введите название приложения', document.title || 'Конструктор приложений');
         if (!title) return;
         document.title = title;
+        updateManifestFromState(snapshotCurrentState());
         saveProject();
       });
 
@@ -1157,6 +1197,7 @@
           if (!dataUrl || !faviconEl) return;
           faviconEl.href = dataUrl;
           faviconEl.type = file.type || 'image/png';
+          updateManifestFromState(snapshotCurrentState());
           saveProject();
         };
         fileInput.click();
@@ -1184,7 +1225,50 @@
     }
 
     function setupDoubleTapToToggleMenu() {
-      const onTap = (event) => {
+      let startX = 0;
+      let startY = 0;
+      let moved = false;
+      let lastTouchTime = 0;
+      let ignoreClickUntil = 0;
+
+      const onTouchStart = (event) => {
+        if (event.target.closest('#control-panel, #bottom-sheet')) return;
+        const touch = event.touches[0];
+        startX = touch.clientX;
+        startY = touch.clientY;
+        moved = false;
+      };
+
+      const onTouchMove = (event) => {
+        const touch = event.touches[0];
+        const dx = Math.abs(touch.clientX - startX);
+        const dy = Math.abs(touch.clientY - startY);
+        if (dx > 12 || dy > 12) {
+          moved = true;
+          ignoreClickUntil = Date.now() + 600;
+        }
+      };
+
+      const onTouchEnd = (event) => {
+        if (event.target.closest('#control-panel, #bottom-sheet')) return;
+        if (moved) {
+          lastTapTime = 0;
+          return;
+        }
+        const now = Date.now();
+        lastTouchTime = now;
+        if (now - lastTapTime < 300) {
+          panelEl.classList.toggle('hidden');
+          lastTapTime = 0;
+          return;
+        }
+        lastTapTime = now;
+      };
+
+      const onClick = (event) => {
+        // Ignore synthetic click that follows touch
+        if (Date.now() - lastTouchTime < 500) return;
+        if (Date.now() < ignoreClickUntil) return;
         if (event.target.closest('#control-panel, #bottom-sheet')) return;
         const now = Date.now();
         if (now - lastTapTime < 300) {
@@ -1195,8 +1279,10 @@
         lastTapTime = now;
       };
 
-      document.body.addEventListener('click', onTap);
-      document.body.addEventListener('touchend', onTap);
+      document.body.addEventListener('touchstart', onTouchStart, { passive: true });
+      document.body.addEventListener('touchmove', onTouchMove, { passive: true });
+      document.body.addEventListener('touchend', onTouchEnd);
+      document.body.addEventListener('click', onClick);
     }
 
     function handleHashChange() {
@@ -1212,7 +1298,6 @@
         applyIncomingShare(incoming);
       }
       setupSectionResizeObserver();
-      setupPullToRefreshForBody();
       renderScreenLinks();
     }
 
@@ -1236,7 +1321,6 @@
 
       setupButtons();
       setupSectionResizeObserver();
-      setupPullToRefreshForBody();
       setupGlobalImageErrorCleanup();
       setupPrivacyBlurForAppSwitcher();
       renderScreenLinks();
