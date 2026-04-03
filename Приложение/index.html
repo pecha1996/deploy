@@ -87,12 +87,10 @@
 
     #footer.fixed {
       position: fixed;
-      bottom: env(safe-area-inset-bottom, 0px);
+      bottom: 0;
       left: 0;
       width: 100vw;
-      height: auto;
       z-index: 9999;
-      padding-bottom: env(safe-area-inset-bottom, 0px);
     }
 
     #header.has-image,
@@ -230,14 +228,14 @@
       -ms-overflow-style: none;
       touch-action: pan-x pan-y;
     }
-
+    
     .horizontal-scroll img {
       flex-shrink: 0;
-      width: 100% !important;
+      width: 100vw;
       max-width: none !important;
       min-width: 0 !important;
       min-height: 0 !important;
-      height: 100% !important;
+      height: 100vw !important;
       object-fit: contain;
       scroll-snap-align: start;
     }
