@@ -402,7 +402,7 @@
     <div id="footer" class="block"></div>
   </div>
 
-  <div id="control-panel">
+  <div id="control-panel" class="hidden">
     <div class="menu-grid">
       <button type="button" id="set-app-icon">Загрузить иконку</button>
       <button type="button" id="set-app-title">Название приложения</button>
@@ -454,6 +454,7 @@
     let currentIconLarge = 'icon.png';
     let currentIconSmall = 'icon.png';
     let toastTimer;
+    let ignoreTapUntil = 0;
 
     const initialAppMarkup = app.innerHTML;
     let currentScreenId = 'main';
@@ -747,7 +748,7 @@
       }
 
       const block = document.createElement('div');
-      block.className = 'block body-block';
+      block.className = 'block body-block code-block';
 
       const textarea = document.createElement('textarea');
       textarea.placeholder = 'Вставьте HTML/JS код';
@@ -793,8 +794,8 @@
       saveProject();
 
       toggleBtn.addEventListener('click', () => {
-        const isCollapsed = block.classList.toggle('code-collapsed');
-        toggleBtn.textContent = isCollapsed ? 'Показать редактор' : 'Скрыть редактор';
+        block.classList.add('code-collapsed');
+        toggleBtn.style.display = 'none';
       });
     }
 
@@ -1096,6 +1097,9 @@
           pulling = false;
           return;
         }
+        if (dy > 6) {
+          ignoreTapUntil = Date.now() + 500;
+        }
         if (dy > threshold) {
           triggered = true;
         }
@@ -1113,6 +1117,34 @@
       bodyEl.addEventListener('touchmove', onMove, { passive: true });
       bodyEl.addEventListener('touchend', onEnd);
       bodyEl.addEventListener('touchcancel', onEnd);
+    }
+
+    function normalizeCodeBlocks() {
+      const textareas = document.querySelectorAll('#body textarea');
+      textareas.forEach((textarea) => {
+        const block = textarea.closest('.block');
+        if (block) block.classList.add('code-block');
+      });
+    }
+
+    function setEditorsVisible(visible) {
+      normalizeCodeBlocks();
+      const blocks = document.querySelectorAll('.code-block');
+      blocks.forEach((block) => {
+        const toggleBtn = block.querySelector('.code-toggle');
+        if (visible) {
+          block.classList.remove('code-collapsed');
+          if (toggleBtn) {
+            toggleBtn.style.display = '';
+            toggleBtn.textContent = 'Скрыть редактор';
+          }
+        } else {
+          block.classList.add('code-collapsed');
+          if (toggleBtn) {
+            toggleBtn.style.display = 'none';
+          }
+        }
+      });
     }
 
     function toggleFix(section) {
@@ -1403,6 +1435,7 @@
       document.getElementById('share-link').addEventListener('click', copyCurrentScreenLink);
       document.getElementById('toggle-panel').addEventListener('click', () => {
         panelEl.classList.toggle('hidden');
+        setEditorsVisible(panelEl.classList.contains('hidden') === false);
       });
       document.getElementById('save-now').addEventListener('click', saveProject);
 
@@ -1447,6 +1480,11 @@
 
       const onTouchEnd = (event) => {
         if (event.target.closest('#control-panel, #bottom-sheet')) return;
+        if (Date.now() < ignoreTapUntil) {
+          lastTapTime = 0;
+          tapCount = 0;
+          return;
+        }
         if (moved) {
           lastTapTime = 0;
           tapCount = 0;
@@ -1461,6 +1499,7 @@
         }
         if (tapCount >= 3) {
           panelEl.classList.toggle('hidden');
+          setEditorsVisible(panelEl.classList.contains('hidden') === false);
           lastTapTime = 0;
           tapCount = 0;
           return;
@@ -1471,6 +1510,7 @@
       const onClick = (event) => {
         // Ignore synthetic click that follows touch
         if (Date.now() - lastTouchTime < 500) return;
+        if (Date.now() < ignoreTapUntil) return;
         if (Date.now() < ignoreClickUntil) return;
         if (event.target.closest('#control-panel, #bottom-sheet')) return;
         const now = Date.now();
@@ -1481,6 +1521,7 @@
         }
         if (tapCount >= 3) {
           panelEl.classList.toggle('hidden');
+          setEditorsVisible(panelEl.classList.contains('hidden') === false);
           lastTapTime = 0;
           tapCount = 0;
           return;
@@ -1535,6 +1576,8 @@
       renderScreenLinks();
       setupDoubleTapToToggleMenu();
       setupPullToRefreshForBody();
+      setEditorsVisible(false);
+      panelEl.classList.add('hidden');
 
       document.getElementById('sheet-backdrop').addEventListener('click', closeBottomSheet);
       window.addEventListener('hashchange', handleHashChange);
