@@ -163,6 +163,22 @@
       background: var(--danger);
     }
 
+    .code-toggle {
+      margin-top: 8px;
+      margin-bottom: 8px;
+      padding: 6px 10px;
+      border: 1px solid #666;
+      border-radius: 6px;
+      background: #2f2f2f;
+      color: #fff;
+      cursor: pointer;
+    }
+
+    .code-collapsed textarea,
+    .code-collapsed .code-actions {
+      display: none;
+    }
+
     .executed-code {
       width: 100%;
       max-width: 100%;
@@ -274,6 +290,10 @@
       gap: 6px;
     }
 
+    .menu-grid .full {
+      grid-column: 1 / -1;
+    }
+
     .top-actions {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -298,6 +318,12 @@
       font-size: 12px;
       padding: 6px 8px;
       text-align: left;
+    }
+
+    .links-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 6px;
     }
 
     .links-title {
@@ -377,35 +403,31 @@
   </div>
 
   <div id="control-panel">
-    <div class="top-actions">
-      <button type="button" id="add-header-image">Фото в header</button>
-      <button type="button" id="add-footer-image">Фото в footer</button>
-      <button type="button" id="add-header-code">Код в header</button>
-      <button type="button" id="add-footer-code">Код в footer</button>
-    </div>
-
     <div class="menu-grid">
-      <button type="button" id="set-app-title">Название приложения</button>
       <button type="button" id="set-app-icon">Загрузить иконку</button>
+      <button type="button" id="set-app-title">Название приложения</button>
+      <button type="button" id="share-link">Создать ссылку</button>
+      <button type="button" id="set-header-color">Цвет status bar</button>
+      <button type="button" id="add-header-image">Фото в header</button>
+      <button type="button" id="add-header-code">Код в header</button>
+      <button type="button" id="add-footer-image">Фото в footer</button>
+      <button type="button" id="add-footer-code">Код в footer</button>
       <button type="button" id="add-image">Добавить фото в body</button>
       <button type="button" id="add-code">Добавить код в body</button>
       <button type="button" id="add-horizontal-image">Фото в горизонтальный блок</button>
       <button type="button" id="add-horizontal-code">Код в горизонтальный блок</button>
       <button type="button" id="add-button-zone">Зона-кнопка</button>
-      <button type="button" id="set-header-color">Цвет header</button>
       <button type="button" id="create-screen">Создать новый экран</button>
-      <button type="button" id="copy-current-link">Скопировать ссылку экрана</button>
-      <button type="button" id="share-link">Создать ссылку</button>
-      <button type="button" id="toggle-panel">Скрыть меню</button>
+      <div class="links-box full" id="screen-links"></div>
       <button type="button" id="save-now">Сохранить</button>
       <button type="button" id="reset-layout">Сбросить проект</button>
+      <button type="button" id="toggle-panel">Скрыть меню</button>
     </div>
 
     <label><input type="checkbox" id="fix-header" /> Закрепить header</label>
     <label><input type="checkbox" id="fix-footer" /> Закрепить footer</label>
     <label><input type="checkbox" id="enable-privacy-blur" checked /> Блюр в фоне</label>
 
-    <div class="links-box" id="screen-links"></div>
   </div>
 
   <script>
@@ -744,6 +766,11 @@
       clearBtn.type = 'button';
       clearBtn.textContent = 'Очистить результат';
 
+      const toggleBtn = document.createElement('button');
+      toggleBtn.className = 'code-toggle';
+      toggleBtn.type = 'button';
+      toggleBtn.textContent = 'Скрыть редактор';
+
       const outputRoot = document.createElement('div');
 
       executeBtn.addEventListener('click', () => {
@@ -760,9 +787,15 @@
       actions.appendChild(clearBtn);
 
       block.appendChild(actions);
+      block.appendChild(toggleBtn);
       block.appendChild(outputRoot);
       bodyEl.appendChild(block);
       saveProject();
+
+      toggleBtn.addEventListener('click', () => {
+        const isCollapsed = block.classList.toggle('code-collapsed');
+        toggleBtn.textContent = isCollapsed ? 'Показать редактор' : 'Скрыть редактор';
+      });
     }
 
     function addHorizontalCodeItem(container) {
@@ -1271,16 +1304,25 @@
       linksBox.appendChild(title);
 
       ids.forEach((id) => {
-        const row = document.createElement('button');
-        row.type = 'button';
+        const row = document.createElement('div');
+        row.className = 'links-row';
         const mark = id === currentScreenId ? ' (текущий)' : '';
         const shareState = {
           appIcon: (screensState[id] && screensState[id].appIcon) || '',
           appIconSmall: (screensState[id] && screensState[id].appIconSmall) || '',
           appTitle: (screensState[id] && screensState[id].appTitle) || '',
         };
-        row.textContent = 'Экран: ' + id + mark;
-        row.addEventListener('click', async () => {
+        const goBtn = document.createElement('button');
+        goBtn.type = 'button';
+        goBtn.textContent = 'Экран: ' + id + mark;
+        goBtn.addEventListener('click', () => {
+          setScreenHash(id);
+        });
+
+        const copyBtn = document.createElement('button');
+        copyBtn.type = 'button';
+        copyBtn.textContent = 'Ссылка';
+        copyBtn.addEventListener('click', async () => {
           const url = buildShareUrl(id, shareState);
           const ok = await copyTextToClipboard(url);
           if (!ok) {
@@ -1290,6 +1332,8 @@
           }
           showToast('Ссылка скопирована');
         });
+        row.appendChild(goBtn);
+        row.appendChild(copyBtn);
         linksBox.appendChild(row);
       });
     }
@@ -1329,7 +1373,7 @@
       });
 
       document.getElementById('set-header-color').addEventListener('click', () => {
-        const input = prompt('Введите цвет header (например #223344)', window.getComputedStyle(headerEl).backgroundColor);
+        const input = prompt('Введите цвет status bar (например #223344)', window.getComputedStyle(headerEl).backgroundColor);
         if (!input) return;
         headerEl.style.background = input;
         updateThemeColorFromHeader();
@@ -1356,7 +1400,6 @@
       });
 
       document.getElementById('create-screen').addEventListener('click', createSecondScreen);
-      document.getElementById('copy-current-link').addEventListener('click', copyCurrentScreenLink);
       document.getElementById('share-link').addEventListener('click', copyCurrentScreenLink);
       document.getElementById('toggle-panel').addEventListener('click', () => {
         panelEl.classList.toggle('hidden');
@@ -1382,6 +1425,7 @@
       let moved = false;
       let lastTouchTime = 0;
       let ignoreClickUntil = 0;
+      let tapCount = 0;
 
       const onTouchStart = (event) => {
         if (event.target.closest('#control-panel, #bottom-sheet')) return;
@@ -1405,13 +1449,20 @@
         if (event.target.closest('#control-panel, #bottom-sheet')) return;
         if (moved) {
           lastTapTime = 0;
+          tapCount = 0;
           return;
         }
         const now = Date.now();
         lastTouchTime = now;
-        if (now - lastTapTime < 300) {
+        if (now - lastTapTime < 350) {
+          tapCount += 1;
+        } else {
+          tapCount = 1;
+        }
+        if (tapCount >= 3) {
           panelEl.classList.toggle('hidden');
           lastTapTime = 0;
+          tapCount = 0;
           return;
         }
         lastTapTime = now;
@@ -1423,9 +1474,15 @@
         if (Date.now() < ignoreClickUntil) return;
         if (event.target.closest('#control-panel, #bottom-sheet')) return;
         const now = Date.now();
-        if (now - lastTapTime < 300) {
+        if (now - lastTapTime < 350) {
+          tapCount += 1;
+        } else {
+          tapCount = 1;
+        }
+        if (tapCount >= 3) {
           panelEl.classList.toggle('hidden');
           lastTapTime = 0;
+          tapCount = 0;
           return;
         }
         lastTapTime = now;
