@@ -232,8 +232,9 @@
     .horizontal-scroll > img,
     .horizontal-scroll img.horizontal-item {
       width: auto !important;
-      max-width: none !important;
+      max-width: 92vw !important;
       height: auto !important;
+      max-height: min(62vh, 420px) !important;
       object-fit: contain !important;
     }
 
@@ -625,6 +626,17 @@
         touchIconEl.href = currentIconSmall;
       }
       updateManifestFromState(snapshotCurrentState());
+    }
+
+    function normalizeHorizontalImages(root = document) {
+      const images = root.querySelectorAll('.horizontal-scroll img');
+      images.forEach((img) => {
+        img.classList.add('horizontal-item');
+        img.style.removeProperty('width');
+        img.style.removeProperty('height');
+        img.style.removeProperty('max-width');
+        img.style.removeProperty('max-height');
+      });
     }
 
 
@@ -1190,6 +1202,7 @@
       const safe = state || defaultScreenState();
       app.innerHTML = safe.appMarkup || initialAppMarkup;
       reacquireRefsAfterLoad();
+      normalizeHorizontalImages(app);
 
       fixHeader.checked = Boolean(safe.fixHeader);
       fixFooter.checked = Boolean(safe.fixFooter);
