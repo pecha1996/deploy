@@ -1392,9 +1392,21 @@
 
     function runRefresh() {
       saveProject();
-      applyScreenState(screensState[currentScreenId]);
+      ensureScreenExists(currentScreenId);
+      const state = screensState[currentScreenId] || snapshotCurrentState();
+      const holder = document.createElement('div');
+      holder.innerHTML = state.appMarkup || initialAppMarkup;
+      const nextBody = holder.querySelector('#body');
+      if (nextBody && bodyEl) {
+        bodyEl.innerHTML = nextBody.innerHTML;
+        normalizeHorizontalImages(bodyEl);
+        bodyEl.scrollTop = 0;
+      }
+      updateBodyPadding();
       setEditorsVisible(false);
       panelEl.classList.add('hidden');
+      saveProject();
+      showToast('Body обновлен');
     }
 
     function setupButtons() {
