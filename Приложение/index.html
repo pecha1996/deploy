@@ -25,7 +25,7 @@
     html,
     body {
       height: 100%;
-      overflow: auto;
+      overflow: hidden;
     }
 
     body {
@@ -34,16 +34,16 @@
       background: var(--body-bg);
       color: var(--text);
       -webkit-overflow-scrolling: touch;
-      overscroll-behavior: auto;
+      overscroll-behavior: none;
     }
 
     #app {
       display: flex;
       flex-direction: column;
       width: 100%;
+      height: 100dvh;
       min-height: 100dvh;
-      height: auto;
-      overflow: visible;
+      overflow: hidden;
       transition: filter 0.2s ease;
       will-change: filter;
     }
@@ -108,7 +108,8 @@
 
     #body {
       flex: 1 1 auto;
-      overflow: visible;
+      overflow-y: auto;
+      overflow-x: hidden;
       width: 100%;
       min-height: 0;
       padding-top: 0;
@@ -228,6 +229,7 @@
       display: block;
     }
 
+    .horizontal-scroll > img,
     .horizontal-scroll img.horizontal-item {
       width: auto !important;
       max-width: none !important;
@@ -852,11 +854,6 @@
           img.onerror = () => img.remove();
 
           img.onload = () => {
-            const dpr = window.devicePixelRatio || 1;
-            const displayWidth = Math.max(1, Math.round(img.naturalWidth / dpr));
-            const displayHeight = Math.max(1, Math.round(img.naturalHeight / dpr));
-            img.style.width = displayWidth + 'px';
-            img.style.height = displayHeight + 'px';
             img.style.visibility = 'visible';
             saveProject();
           };
@@ -966,6 +963,7 @@
             const dataUrl = await readFileAsDataUrl(file);
             if (!dataUrl) continue;
             const img = document.createElement('img');
+            img.className = 'horizontal-item';
             img.src = dataUrl;
             img.alt = '';
             img.style.visibility = 'hidden';
@@ -1066,7 +1064,56 @@
     }
 
     function setupPullToRefreshForBody() {
-      // Use native browser pull-to-refresh.
+      let startX = 0;
+      let startY = 0;
+      let pulling = false;
+      let triggered = false;
+      const threshold = 80;
+
+      const onStart = (event) => {
+        if (!bodyEl) return;
+        if (!event.touches || event.touches.length !== 1) return;
+        if (bodyEl.scrollTop > 0) return;
+        const touch = event.touches[0];
+        startX = touch.clientX;
+        startY = touch.clientY;
+        pulling = true;
+        triggered = false;
+      };
+
+      const onMove = (event) => {
+        if (!pulling || !event.touches || event.touches.length !== 1) return;
+        const touch = event.touches[0];
+        const dx = touch.clientX - startX;
+        const dy = touch.clientY - startY;
+        if (dy <= 0) {
+          pulling = false;
+          return;
+        }
+        if (Math.abs(dx) > Math.abs(dy)) {
+          pulling = false;
+          return;
+        }
+        if (dy > 6) {
+          ignoreTapUntil = Date.now() + 500;
+        }
+        if (dy > threshold) {
+          triggered = true;
+        }
+      };
+
+      const onEnd = () => {
+        if (pulling && triggered) {
+          runRefresh();
+        }
+        pulling = false;
+        triggered = false;
+      };
+
+      bodyEl.addEventListener('touchstart', onStart, { passive: true });
+      bodyEl.addEventListener('touchmove', onMove, { passive: true });
+      bodyEl.addEventListener('touchend', onEnd);
+      bodyEl.addEventListener('touchcancel', onEnd);
     }
 
     function normalizeCodeBlocks() {
