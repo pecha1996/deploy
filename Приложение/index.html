@@ -268,6 +268,12 @@
       cursor: pointer;
     }
 
+    .menu-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
+
     .top-actions {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -378,22 +384,22 @@
       <button type="button" id="add-footer-code">Код в footer</button>
     </div>
 
-    <button type="button" id="set-app-title">Название приложения</button>
-    <button type="button" id="set-app-icon">Загрузить иконку</button>
-    <button type="button" id="add-image">Добавить фото в body</button>
-    <button type="button" id="add-code">Добавить код в body</button>
-    <button type="button" id="add-horizontal">Горизонтальный блок (фото/код)</button>
-    <button type="button" id="add-button-zone">Зона-кнопка</button>
-    <button type="button" id="quick-corridor">Быстрый коридор</button>
-    <button type="button" id="set-header-color">Цвет header</button>
-
-    <button type="button" id="create-screen">Создать 2-й экран</button>
-    <button type="button" id="copy-current-link">Скопировать ссылку экрана</button>
-    <button type="button" id="share-link">Создать ссылку</button>
-    <button type="button" id="toggle-panel">Скрыть меню</button>
-
-    <button type="button" id="save-now">Сохранить</button>
-    <button type="button" id="reset-layout">Сбросить проект</button>
+    <div class="menu-grid">
+      <button type="button" id="set-app-title">Название приложения</button>
+      <button type="button" id="set-app-icon">Загрузить иконку</button>
+      <button type="button" id="add-image">Добавить фото в body</button>
+      <button type="button" id="add-code">Добавить код в body</button>
+      <button type="button" id="add-horizontal-image">Фото в горизонтальный блок</button>
+      <button type="button" id="add-horizontal-code">Код в горизонтальный блок</button>
+      <button type="button" id="add-button-zone">Зона-кнопка</button>
+      <button type="button" id="set-header-color">Цвет header</button>
+      <button type="button" id="create-screen">Создать новый экран</button>
+      <button type="button" id="copy-current-link">Скопировать ссылку экрана</button>
+      <button type="button" id="share-link">Создать ссылку</button>
+      <button type="button" id="toggle-panel">Скрыть меню</button>
+      <button type="button" id="save-now">Сохранить</button>
+      <button type="button" id="reset-layout">Сбросить проект</button>
+    </div>
 
     <label><input type="checkbox" id="fix-header" /> Закрепить header</label>
     <label><input type="checkbox" id="fix-footer" /> Закрепить footer</label>
@@ -769,14 +775,14 @@
       container.appendChild(holder);
     }
 
-    function addHorizontalScrollBlock(target) {
+    function addHorizontalScrollBlock(target, forcedMode) {
       target = normalizeTarget(target);
       if (target !== bodyEl) {
         alert('Горизонтальный блок можно добавить только в body.');
         return;
       }
 
-      const mode = (prompt('Тип блока: image / code', 'image') || 'image').toLowerCase().trim();
+      const mode = (forcedMode || prompt('Тип блока: image / code', 'image') || 'image').toLowerCase().trim();
       const block = document.createElement('div');
       block.className = 'block body-block media-block horizontal-scroll';
 
@@ -832,6 +838,14 @@
       };
 
       fileInput.click();
+    }
+
+    function addHorizontalImageBlock(target) {
+      addHorizontalScrollBlock(target, 'image');
+    }
+
+    function addHorizontalCodeBlock(target) {
+      addHorizontalScrollBlock(target, 'code');
     }
 
     function addButtonZoneBlock(target) {
@@ -938,16 +952,6 @@
 
       block.appendChild(slotBtn);
       return block;
-    }
-
-    function addQuickCorridorPreset() {
-      const countRaw = prompt('Сколько секций в коридоре?', '6');
-      const count = Math.max(1, Math.min(30, Number.parseInt(countRaw || '6', 10) || 6));
-
-      for (let i = 1; i <= count; i += 1) {
-        bodyEl.appendChild(createImageSlotBlock('Секция ' + i + ' — добавить фото'));
-      }
-      saveProject();
     }
 
     function openBottomSheet(html) {
@@ -1272,13 +1276,19 @@
         const mark = id === currentScreenId ? ' (текущий)' : '';
         const shareState = {
           appIcon: (screensState[id] && screensState[id].appIcon) || '',
+          appIconSmall: (screensState[id] && screensState[id].appIconSmall) || '',
           appTitle: (screensState[id] && screensState[id].appTitle) || '',
         };
-        row.textContent = id + mark + ': ' + buildShareUrl(id, shareState);
+        row.textContent = 'Экран: ' + id + mark;
         row.addEventListener('click', async () => {
           const url = buildShareUrl(id, shareState);
-          await copyTextToClipboard(url);
-          setScreenHash(id);
+          const ok = await copyTextToClipboard(url);
+          if (!ok) {
+            prompt('Ссылка экрана:', url);
+            showToast('Ссылка готова');
+            return;
+          }
+          showToast('Ссылка скопирована');
         });
         linksBox.appendChild(row);
       });
@@ -1306,9 +1316,9 @@
       document.getElementById('add-footer-code').addEventListener('click', () => setSectionCode(footerEl));
       document.getElementById('add-image').addEventListener('click', () => addImageBlock(bodyEl));
       document.getElementById('add-code').addEventListener('click', () => addCodeBlock(bodyEl));
-      document.getElementById('add-horizontal').addEventListener('click', () => addHorizontalScrollBlock(bodyEl));
+      document.getElementById('add-horizontal-image').addEventListener('click', () => addHorizontalImageBlock(bodyEl));
+      document.getElementById('add-horizontal-code').addEventListener('click', () => addHorizontalCodeBlock(bodyEl));
       document.getElementById('add-button-zone').addEventListener('click', () => addButtonZoneBlock(bodyEl));
-      document.getElementById('quick-corridor').addEventListener('click', addQuickCorridorPreset);
 
       document.getElementById('set-app-title').addEventListener('click', () => {
         const title = prompt('Введите название приложения', document.title || 'Конструктор приложений');
