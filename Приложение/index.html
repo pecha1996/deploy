@@ -391,12 +391,52 @@
       opacity: 1;
       transform: translateX(-50%) translateY(0);
     }
+
+    #pull-spinner {
+      position: fixed;
+      left: 50%;
+      top: max(8px, env(safe-area-inset-top));
+      width: 24px;
+      height: 24px;
+      border-radius: 999px;
+      --pull-progress: 0turn;
+      background:
+        conic-gradient(
+          from -90deg,
+          rgba(255, 255, 255, 0.96) var(--pull-progress),
+          rgba(255, 255, 255, 0.24) 0turn
+        );
+      -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 2.4px), #000 calc(100% - 2.4px));
+      mask: radial-gradient(farthest-side, transparent calc(100% - 2.4px), #000 calc(100% - 2.4px));
+      opacity: 0;
+      pointer-events: none;
+      z-index: 21000;
+      transform: translateX(-50%) translateY(-14px) scale(0.86);
+      transition: opacity 0.14s ease, transform 0.14s ease;
+    }
+
+    #pull-spinner.loading {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0) scale(1);
+      --pull-progress: 0.78turn;
+      animation: pull-spinner-rotate 0.72s linear infinite;
+    }
+
+    @keyframes pull-spinner-rotate {
+      from {
+        transform: translateX(-50%) translateY(0) scale(1) rotate(0deg);
+      }
+      to {
+        transform: translateX(-50%) translateY(0) scale(1) rotate(360deg);
+      }
+    }
   </style>
 </head>
 <body>
   <div id="sheet-backdrop"></div>
   <div id="bottom-sheet"></div>
   <div id="toast"></div>
+  <div id="pull-spinner"></div>
 
   <div id="app">
     <div id="header" class="block"></div>
@@ -456,6 +496,7 @@
     let currentIconLarge = 'icon.png';
     let currentIconSmall = 'icon.png';
     let toastTimer;
+    let pullSpinnerTimer;
     let ignoreTapUntil = 0;
 
     const initialAppMarkup = app.innerHTML;
@@ -588,6 +629,39 @@
       toastTimer = window.setTimeout(() => {
         toast.classList.remove('visible');
       }, duration);
+    }
+
+    function showPullSpinnerProgress(progress) {
+      const spinner = document.getElementById('pull-spinner');
+      if (!spinner) return;
+      const value = Math.max(0, Math.min(1, progress || 0));
+      spinner.classList.remove('loading');
+      const y = -14 + 14 * value;
+      const scale = 0.86 + 0.14 * value;
+      const alpha = 0.08 + 0.92 * value;
+      const arcTurns = 0.08 + 0.64 * value;
+      spinner.style.setProperty('--pull-progress', arcTurns + 'turn');
+      spinner.style.opacity = String(alpha);
+      spinner.style.transform = 'translateX(-50%) translateY(' + y + 'px) scale(' + scale + ')';
+    }
+
+    function showPullSpinnerLoading() {
+      const spinner = document.getElementById('pull-spinner');
+      if (!spinner) return;
+      if (pullSpinnerTimer) window.clearTimeout(pullSpinnerTimer);
+      spinner.style.opacity = '';
+      spinner.style.transform = '';
+      spinner.style.setProperty('--pull-progress', '0.78turn');
+      spinner.classList.add('loading');
+    }
+
+    function hidePullSpinner() {
+      const spinner = document.getElementById('pull-spinner');
+      if (!spinner) return;
+      spinner.classList.remove('loading');
+      spinner.style.setProperty('--pull-progress', '0turn');
+      spinner.style.opacity = '0';
+      spinner.style.transform = 'translateX(-50%) translateY(-14px) scale(0.86)';
     }
 
     function resizeImageDataUrl(dataUrl, size) {
@@ -1081,6 +1155,7 @@
       let pulling = false;
       let triggered = false;
       const threshold = 80;
+      const maxPull = 130;
 
       const onStart = (event) => {
         if (!bodyEl) return;
@@ -1091,6 +1166,7 @@
         startY = touch.clientY;
         pulling = true;
         triggered = false;
+        hidePullSpinner();
       };
 
       const onMove = (event) => {
@@ -1104,11 +1180,14 @@
         }
         if (Math.abs(dx) > Math.abs(dy)) {
           pulling = false;
+          hidePullSpinner();
           return;
         }
         if (dy > 6) {
           ignoreTapUntil = Date.now() + 500;
         }
+        const progress = Math.max(0, Math.min(1, dy / maxPull));
+        showPullSpinnerProgress(progress);
         if (dy > threshold) {
           triggered = true;
         }
@@ -1116,7 +1195,13 @@
 
       const onEnd = () => {
         if (pulling && triggered) {
+          showPullSpinnerLoading();
           runRefresh();
+          pullSpinnerTimer = window.setTimeout(() => {
+            hidePullSpinner();
+          }, 520);
+        } else {
+          hidePullSpinner();
         }
         pulling = false;
         triggered = false;
