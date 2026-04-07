@@ -398,65 +398,58 @@
       position: fixed;
       left: 50%;
       top: 0;
-      width: 18px;
-      height: 18px;
+      width: 30px;
+      height: 30px;
       opacity: 0;
       pointer-events: none;
       z-index: 21000;
-      transform: translateX(-50%) translateY(-20px) scale(0.88);
-      transition: opacity 0.14s ease, transform 0.14s ease;
+      transform: translateX(-50%) translateY(-24px) scale(0.82);
+      transition: opacity 0.16s ease, transform 0.16s ease;
     }
 
     #pull-spinner .tick {
       position: absolute;
-      left: 8px;
-      top: 1px;
-      width: 1.7px;
-      height: 5px;
+      left: 12.75px;
+      top: 1.6px;
+      width: 4.5px;
+      height: 10px;
       border-radius: 999px;
-      background: rgba(242, 242, 247, 0.94);
-      opacity: 0.16;
-      transform-origin: 0.85px 8px;
+      background: rgb(140, 140, 147);
+      opacity: 0.08;
+      transform-origin: 2.25px 13.4px;
     }
 
     #pull-spinner .tick:nth-child(1) { transform: rotate(0deg); }
-    #pull-spinner .tick:nth-child(2) { transform: rotate(30deg); }
-    #pull-spinner .tick:nth-child(3) { transform: rotate(60deg); }
-    #pull-spinner .tick:nth-child(4) { transform: rotate(90deg); }
-    #pull-spinner .tick:nth-child(5) { transform: rotate(120deg); }
-    #pull-spinner .tick:nth-child(6) { transform: rotate(150deg); }
-    #pull-spinner .tick:nth-child(7) { transform: rotate(180deg); }
-    #pull-spinner .tick:nth-child(8) { transform: rotate(210deg); }
-    #pull-spinner .tick:nth-child(9) { transform: rotate(240deg); }
-    #pull-spinner .tick:nth-child(10) { transform: rotate(270deg); }
-    #pull-spinner .tick:nth-child(11) { transform: rotate(300deg); }
-    #pull-spinner .tick:nth-child(12) { transform: rotate(330deg); }
+    #pull-spinner .tick:nth-child(2) { transform: rotate(45deg); }
+    #pull-spinner .tick:nth-child(3) { transform: rotate(90deg); }
+    #pull-spinner .tick:nth-child(4) { transform: rotate(135deg); }
+    #pull-spinner .tick:nth-child(5) { transform: rotate(180deg); }
+    #pull-spinner .tick:nth-child(6) { transform: rotate(225deg); }
+    #pull-spinner .tick:nth-child(7) { transform: rotate(270deg); }
+    #pull-spinner .tick:nth-child(8) { transform: rotate(315deg); }
 
     #pull-spinner.loading {
       opacity: 1;
       transform: translateX(-50%) translateY(0) scale(1);
+      animation: pull-spinner-rotate 0.9s linear infinite;
     }
 
     #pull-spinner.loading .tick {
-      animation: pull-tick-fade 0.88s linear infinite;
+      animation: none;
     }
 
-    #pull-spinner.loading .tick:nth-child(1) { animation-delay: -0.916s; }
-    #pull-spinner.loading .tick:nth-child(2) { animation-delay: -0.833s; }
-    #pull-spinner.loading .tick:nth-child(3) { animation-delay: -0.75s; }
-    #pull-spinner.loading .tick:nth-child(4) { animation-delay: -0.666s; }
-    #pull-spinner.loading .tick:nth-child(5) { animation-delay: -0.583s; }
-    #pull-spinner.loading .tick:nth-child(6) { animation-delay: -0.5s; }
-    #pull-spinner.loading .tick:nth-child(7) { animation-delay: -0.416s; }
-    #pull-spinner.loading .tick:nth-child(8) { animation-delay: -0.333s; }
-    #pull-spinner.loading .tick:nth-child(9) { animation-delay: -0.25s; }
-    #pull-spinner.loading .tick:nth-child(10) { animation-delay: -0.166s; }
-    #pull-spinner.loading .tick:nth-child(11) { animation-delay: -0.083s; }
-    #pull-spinner.loading .tick:nth-child(12) { animation-delay: 0s; }
+    #pull-spinner.loading .tick:nth-child(1) { opacity: 0.96; }
+    #pull-spinner.loading .tick:nth-child(2) { opacity: 0.84; }
+    #pull-spinner.loading .tick:nth-child(3) { opacity: 0.72; }
+    #pull-spinner.loading .tick:nth-child(4) { opacity: 0.6; }
+    #pull-spinner.loading .tick:nth-child(5) { opacity: 0.48; }
+    #pull-spinner.loading .tick:nth-child(6) { opacity: 0.36; }
+    #pull-spinner.loading .tick:nth-child(7) { opacity: 0.22; }
+    #pull-spinner.loading .tick:nth-child(8) { opacity: 0.1; }
 
-    @keyframes pull-tick-fade {
-      0% { opacity: 1; }
-      100% { opacity: 0.16; }
+    @keyframes pull-spinner-rotate {
+      from { transform: translateX(-50%) translateY(0) scale(1) rotate(0deg); }
+      to { transform: translateX(-50%) translateY(0) scale(1) rotate(360deg); }
     }
   </style>
 </head>
@@ -465,10 +458,6 @@
   <div id="bottom-sheet"></div>
   <div id="toast"></div>
   <div id="pull-spinner">
-    <span class="tick"></span>
-    <span class="tick"></span>
-    <span class="tick"></span>
-    <span class="tick"></span>
     <span class="tick"></span>
     <span class="tick"></span>
     <span class="tick"></span>
@@ -539,9 +528,9 @@
     let toastTimer;
     let pullSpinnerTimer;
     let ignoreTapUntil = 0;
-    const IOS_PULL_MAX_OFFSET = 36;
-    const IOS_PULL_LOADING_OFFSET = 24;
-    const IOS_SPINNER_HIDDEN_Y = -20;
+    const IOS_PULL_MAX_OFFSET = 44;
+    const IOS_PULL_LOADING_OFFSET = 30;
+    const IOS_SPINNER_HIDDEN_Y = -24;
     const IOS_SPINNER_VISIBLE_Y = 0;
 
     const initialAppMarkup = app.innerHTML;
@@ -685,17 +674,17 @@
       const ticks = spinner.querySelectorAll('.tick');
       const pullOffset = Math.round(IOS_PULL_MAX_OFFSET * value);
       const y = IOS_SPINNER_HIDDEN_Y + Math.round((IOS_SPINNER_VISIBLE_Y - IOS_SPINNER_HIDDEN_Y) * value);
-      const scale = 0.86 + 0.14 * value;
-      const alpha = 0.12 + 0.88 * value;
+      const scale = 0.82 + 0.18 * value;
+      const alpha = 0.06 + 0.94 * value;
       spinner.style.opacity = String(alpha);
       spinner.style.transform = 'translateX(-50%) translateY(' + y + 'px) scale(' + scale + ')';
-      const litCount = Math.max(1, Math.round(value * 12));
+      const litCount = Math.max(1, Math.round(value * 8));
       ticks.forEach((tick, index) => {
         if (index < litCount) {
           const step = (index + 1) / Math.max(1, litCount);
-          tick.style.opacity = String(0.22 + step * 0.72);
+          tick.style.opacity = String(0.12 + step * 0.78);
         } else {
-          tick.style.opacity = '0.14';
+          tick.style.opacity = '0.06';
         }
       });
       if (bodyEl) {
@@ -726,7 +715,7 @@
       if (!spinner) return;
       spinner.classList.remove('loading');
       spinner.style.opacity = '0';
-      spinner.style.transform = 'translateX(-50%) translateY(' + IOS_SPINNER_HIDDEN_Y + 'px) scale(0.86)';
+      spinner.style.transform = 'translateX(-50%) translateY(' + IOS_SPINNER_HIDDEN_Y + 'px) scale(0.82)';
       spinner.querySelectorAll('.tick').forEach((tick) => {
         tick.style.opacity = '';
       });
@@ -740,7 +729,7 @@
       const spinner = document.getElementById('pull-spinner');
       if (!spinner || !headerEl) return;
       const headerBottom = headerEl.getBoundingClientRect().bottom;
-      spinner.style.top = Math.round(headerBottom + 6) + 'px';
+      spinner.style.top = Math.round(headerBottom + 8) + 'px';
     }
 
     function resizeImageDataUrl(dataUrl, size) {
