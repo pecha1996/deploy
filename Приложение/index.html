@@ -398,25 +398,25 @@
       position: fixed;
       left: 50%;
       top: 0;
-      width: 30px;
-      height: 30px;
+      width: 34px;
+      height: 34px;
       opacity: 0;
       pointer-events: none;
       z-index: 21000;
-      transform: translateX(-50%) translateY(-24px) scale(0.82);
+      transform: translateX(-50%) translateY(-26px) scale(0.82);
       transition: opacity 0.16s ease, transform 0.16s ease;
     }
 
     #pull-spinner .tick {
       position: absolute;
-      left: 12.75px;
-      top: 1.6px;
-      width: 4.5px;
-      height: 10px;
+      left: 14.7px;
+      top: 2px;
+      width: 4.6px;
+      height: 10.4px;
       border-radius: 999px;
       background: rgb(140, 140, 147);
       opacity: 0.08;
-      transform-origin: 2.25px 13.4px;
+      transform-origin: 2.3px 15px;
     }
 
     #pull-spinner .tick:nth-child(1) { transform: rotate(0deg); }
@@ -530,7 +530,7 @@
     let ignoreTapUntil = 0;
     const IOS_PULL_MAX_OFFSET = 44;
     const IOS_PULL_LOADING_OFFSET = 30;
-    const IOS_SPINNER_HIDDEN_Y = -24;
+    const IOS_SPINNER_HIDDEN_Y = -26;
     const IOS_SPINNER_VISIBLE_Y = 0;
 
     const initialAppMarkup = app.innerHTML;
