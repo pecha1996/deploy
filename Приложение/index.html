@@ -403,20 +403,20 @@
       opacity: 0;
       pointer-events: none;
       z-index: 21000;
-      transform: translateX(-50%) translateY(-20px) scale(0.86);
+      transform: translateX(-50%) translateY(-20px) scale(0.88);
       transition: opacity 0.14s ease, transform 0.14s ease;
     }
 
     #pull-spinner .tick {
       position: absolute;
       left: 8px;
-      top: 0.8px;
-      width: 1.8px;
-      height: 5.2px;
-      border-radius: 1px;
-      background: rgba(236, 236, 241, 0.95);
-      opacity: 0.14;
-      transform-origin: 1px 8px;
+      top: 1px;
+      width: 1.7px;
+      height: 5px;
+      border-radius: 999px;
+      background: rgba(242, 242, 247, 0.94);
+      opacity: 0.16;
+      transform-origin: 0.85px 8px;
     }
 
     #pull-spinner .tick:nth-child(1) { transform: rotate(0deg); }
@@ -438,7 +438,7 @@
     }
 
     #pull-spinner.loading .tick {
-      animation: pull-tick-fade 0.84s linear infinite;
+      animation: pull-tick-fade 0.88s linear infinite;
     }
 
     #pull-spinner.loading .tick:nth-child(1) { animation-delay: -0.916s; }
@@ -456,7 +456,7 @@
 
     @keyframes pull-tick-fade {
       0% { opacity: 1; }
-      100% { opacity: 0.14; }
+      100% { opacity: 0.16; }
     }
   </style>
 </head>
