@@ -114,6 +114,8 @@
       min-height: 0;
       padding-top: 0;
       padding-bottom: 0;
+      transition: transform 0.2s ease;
+      will-change: transform;
     }
 
     .block img {
@@ -395,40 +397,66 @@
     #pull-spinner {
       position: fixed;
       left: 50%;
-      top: max(8px, env(safe-area-inset-top));
-      width: 24px;
-      height: 24px;
-      border-radius: 999px;
-      --pull-progress: 0turn;
-      background:
-        conic-gradient(
-          from -90deg,
-          rgba(255, 255, 255, 0.96) var(--pull-progress),
-          rgba(255, 255, 255, 0.24) 0turn
-        );
-      -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 2.4px), #000 calc(100% - 2.4px));
-      mask: radial-gradient(farthest-side, transparent calc(100% - 2.4px), #000 calc(100% - 2.4px));
+      top: 0;
+      width: 18px;
+      height: 18px;
       opacity: 0;
       pointer-events: none;
       z-index: 21000;
-      transform: translateX(-50%) translateY(-14px) scale(0.86);
+      transform: translateX(-50%) translateY(-20px) scale(0.86);
       transition: opacity 0.14s ease, transform 0.14s ease;
     }
+
+    #pull-spinner .tick {
+      position: absolute;
+      left: 8px;
+      top: 0.8px;
+      width: 1.8px;
+      height: 5.2px;
+      border-radius: 1px;
+      background: rgba(236, 236, 241, 0.95);
+      opacity: 0.14;
+      transform-origin: 1px 8px;
+    }
+
+    #pull-spinner .tick:nth-child(1) { transform: rotate(0deg); }
+    #pull-spinner .tick:nth-child(2) { transform: rotate(30deg); }
+    #pull-spinner .tick:nth-child(3) { transform: rotate(60deg); }
+    #pull-spinner .tick:nth-child(4) { transform: rotate(90deg); }
+    #pull-spinner .tick:nth-child(5) { transform: rotate(120deg); }
+    #pull-spinner .tick:nth-child(6) { transform: rotate(150deg); }
+    #pull-spinner .tick:nth-child(7) { transform: rotate(180deg); }
+    #pull-spinner .tick:nth-child(8) { transform: rotate(210deg); }
+    #pull-spinner .tick:nth-child(9) { transform: rotate(240deg); }
+    #pull-spinner .tick:nth-child(10) { transform: rotate(270deg); }
+    #pull-spinner .tick:nth-child(11) { transform: rotate(300deg); }
+    #pull-spinner .tick:nth-child(12) { transform: rotate(330deg); }
 
     #pull-spinner.loading {
       opacity: 1;
       transform: translateX(-50%) translateY(0) scale(1);
-      --pull-progress: 0.78turn;
-      animation: pull-spinner-rotate 0.72s linear infinite;
     }
 
-    @keyframes pull-spinner-rotate {
-      from {
-        transform: translateX(-50%) translateY(0) scale(1) rotate(0deg);
-      }
-      to {
-        transform: translateX(-50%) translateY(0) scale(1) rotate(360deg);
-      }
+    #pull-spinner.loading .tick {
+      animation: pull-tick-fade 0.84s linear infinite;
+    }
+
+    #pull-spinner.loading .tick:nth-child(1) { animation-delay: -0.916s; }
+    #pull-spinner.loading .tick:nth-child(2) { animation-delay: -0.833s; }
+    #pull-spinner.loading .tick:nth-child(3) { animation-delay: -0.75s; }
+    #pull-spinner.loading .tick:nth-child(4) { animation-delay: -0.666s; }
+    #pull-spinner.loading .tick:nth-child(5) { animation-delay: -0.583s; }
+    #pull-spinner.loading .tick:nth-child(6) { animation-delay: -0.5s; }
+    #pull-spinner.loading .tick:nth-child(7) { animation-delay: -0.416s; }
+    #pull-spinner.loading .tick:nth-child(8) { animation-delay: -0.333s; }
+    #pull-spinner.loading .tick:nth-child(9) { animation-delay: -0.25s; }
+    #pull-spinner.loading .tick:nth-child(10) { animation-delay: -0.166s; }
+    #pull-spinner.loading .tick:nth-child(11) { animation-delay: -0.083s; }
+    #pull-spinner.loading .tick:nth-child(12) { animation-delay: 0s; }
+
+    @keyframes pull-tick-fade {
+      0% { opacity: 1; }
+      100% { opacity: 0.14; }
     }
   </style>
 </head>
@@ -436,7 +464,20 @@
   <div id="sheet-backdrop"></div>
   <div id="bottom-sheet"></div>
   <div id="toast"></div>
-  <div id="pull-spinner"></div>
+  <div id="pull-spinner">
+    <span class="tick"></span>
+    <span class="tick"></span>
+    <span class="tick"></span>
+    <span class="tick"></span>
+    <span class="tick"></span>
+    <span class="tick"></span>
+    <span class="tick"></span>
+    <span class="tick"></span>
+    <span class="tick"></span>
+    <span class="tick"></span>
+    <span class="tick"></span>
+    <span class="tick"></span>
+  </div>
 
   <div id="app">
     <div id="header" class="block"></div>
@@ -498,6 +539,10 @@
     let toastTimer;
     let pullSpinnerTimer;
     let ignoreTapUntil = 0;
+    const IOS_PULL_MAX_OFFSET = 36;
+    const IOS_PULL_LOADING_OFFSET = 24;
+    const IOS_SPINNER_HIDDEN_Y = -20;
+    const IOS_SPINNER_VISIBLE_Y = 0;
 
     const initialAppMarkup = app.innerHTML;
     let currentScreenId = 'main';
@@ -634,34 +679,68 @@
     function showPullSpinnerProgress(progress) {
       const spinner = document.getElementById('pull-spinner');
       if (!spinner) return;
+      updatePullSpinnerAnchor();
       const value = Math.max(0, Math.min(1, progress || 0));
       spinner.classList.remove('loading');
-      const y = -14 + 14 * value;
+      const ticks = spinner.querySelectorAll('.tick');
+      const pullOffset = Math.round(IOS_PULL_MAX_OFFSET * value);
+      const y = IOS_SPINNER_HIDDEN_Y + Math.round((IOS_SPINNER_VISIBLE_Y - IOS_SPINNER_HIDDEN_Y) * value);
       const scale = 0.86 + 0.14 * value;
-      const alpha = 0.08 + 0.92 * value;
-      const arcTurns = 0.08 + 0.64 * value;
-      spinner.style.setProperty('--pull-progress', arcTurns + 'turn');
+      const alpha = 0.12 + 0.88 * value;
       spinner.style.opacity = String(alpha);
       spinner.style.transform = 'translateX(-50%) translateY(' + y + 'px) scale(' + scale + ')';
+      const litCount = Math.max(1, Math.round(value * 12));
+      ticks.forEach((tick, index) => {
+        if (index < litCount) {
+          const step = (index + 1) / Math.max(1, litCount);
+          tick.style.opacity = String(0.22 + step * 0.72);
+        } else {
+          tick.style.opacity = '0.14';
+        }
+      });
+      if (bodyEl) {
+        bodyEl.style.transition = 'none';
+        bodyEl.style.transform = 'translateY(' + pullOffset + 'px)';
+      }
     }
 
     function showPullSpinnerLoading() {
       const spinner = document.getElementById('pull-spinner');
       if (!spinner) return;
+      updatePullSpinnerAnchor();
       if (pullSpinnerTimer) window.clearTimeout(pullSpinnerTimer);
       spinner.style.opacity = '';
       spinner.style.transform = '';
-      spinner.style.setProperty('--pull-progress', '0.78turn');
+      spinner.querySelectorAll('.tick').forEach((tick) => {
+        tick.style.opacity = '';
+      });
       spinner.classList.add('loading');
+      if (bodyEl) {
+        bodyEl.style.transition = 'transform 0.18s ease';
+        bodyEl.style.transform = 'translateY(' + IOS_PULL_LOADING_OFFSET + 'px)';
+      }
     }
 
     function hidePullSpinner() {
       const spinner = document.getElementById('pull-spinner');
       if (!spinner) return;
       spinner.classList.remove('loading');
-      spinner.style.setProperty('--pull-progress', '0turn');
       spinner.style.opacity = '0';
-      spinner.style.transform = 'translateX(-50%) translateY(-14px) scale(0.86)';
+      spinner.style.transform = 'translateX(-50%) translateY(' + IOS_SPINNER_HIDDEN_Y + 'px) scale(0.86)';
+      spinner.querySelectorAll('.tick').forEach((tick) => {
+        tick.style.opacity = '';
+      });
+      if (bodyEl) {
+        bodyEl.style.transition = 'transform 0.2s ease';
+        bodyEl.style.transform = 'translateY(0)';
+      }
+    }
+
+    function updatePullSpinnerAnchor() {
+      const spinner = document.getElementById('pull-spinner');
+      if (!spinner || !headerEl) return;
+      const headerBottom = headerEl.getBoundingClientRect().bottom;
+      spinner.style.top = Math.round(headerBottom + 6) + 'px';
     }
 
     function resizeImageDataUrl(dataUrl, size) {
@@ -1154,8 +1233,8 @@
       let startY = 0;
       let pulling = false;
       let triggered = false;
-      const threshold = 80;
-      const maxPull = 130;
+      const threshold = 72;
+      const maxPull = 118;
 
       const onStart = (event) => {
         if (!bodyEl) return;
@@ -1176,6 +1255,7 @@
         const dy = touch.clientY - startY;
         if (dy <= 0) {
           pulling = false;
+          hidePullSpinner();
           return;
         }
         if (Math.abs(dx) > Math.abs(dy)) {
@@ -1488,10 +1568,10 @@
         bodyEl.scrollTop = 0;
       }
       updateBodyPadding();
+      updatePullSpinnerAnchor();
       setEditorsVisible(false);
       panelEl.classList.add('hidden');
       saveProject();
-      showToast('Body обновлен');
     }
 
     function setupButtons() {
@@ -1691,7 +1771,11 @@
       document.getElementById('sheet-backdrop').addEventListener('click', closeBottomSheet);
       window.addEventListener('hashchange', handleHashChange);
       window.addEventListener('beforeunload', saveProject);
-      window.addEventListener('resize', updateBodyPadding);
+      window.addEventListener('resize', () => {
+        updateBodyPadding();
+        updatePullSpinnerAnchor();
+      });
+      updatePullSpinnerAnchor();
     }
 
     init();
