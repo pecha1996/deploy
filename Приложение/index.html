@@ -431,7 +431,7 @@
     #pull-spinner.loading {
       opacity: 1;
       transform: translateX(-50%) translateY(0) scale(1) rotate(0deg);
-      animation: pull-spinner-intro 0.42s ease forwards;
+      animation: pull-spinner-intro 0.7s ease forwards;
     }
 
     #pull-spinner.loading .tick {
@@ -440,7 +440,7 @@
     }
 
     #pull-spinner.loading.spinning .tick {
-      animation: pull-spinner-glow 1s linear infinite;
+      animation: pull-spinner-glow 1.2s linear infinite;
     }
 
     #pull-spinner.loading.spinning .tick:nth-child(5) { animation-delay: 0s; }
@@ -459,7 +459,7 @@
       }
       100% {
         opacity: 0.4;
-        transform: translateX(-50%) translateY(0) scale(1) rotate(180deg);
+        transform: translateX(-50%) translateY(0) scale(1) rotate(90deg);
       }
     }
 
@@ -557,6 +557,9 @@
     const IOS_SPINNER_BASE_ROTATION = 0;
     const IOS_SPINNER_HIDDEN_Y = -26;
     const IOS_SPINNER_VISIBLE_Y = 0;
+    const PULL_SPINNER_INTRO_MS = 700;
+    const PULL_SPINNER_SPIN_START_MS = 700;
+    const PULL_SPINNER_HIDE_DELAY_MS = 1600;
 
     const initialAppMarkup = app.innerHTML;
     let currentScreenId = 'main';
@@ -740,7 +743,7 @@
       pullSpinnerPhaseTimer = window.setTimeout(() => {
         spinner.style.opacity = '1';
         spinner.classList.add('spinning');
-      }, 420);
+      }, PULL_SPINNER_SPIN_START_MS);
       if (bodyEl) {
         bodyEl.style.transition = 'transform 0.18s ease';
         bodyEl.style.transform = 'translateY(' + IOS_PULL_LOADING_OFFSET + 'px)';
@@ -1324,7 +1327,7 @@
           runRefresh();
           pullSpinnerTimer = window.setTimeout(() => {
             hidePullSpinner();
-          }, 520);
+          }, PULL_SPINNER_HIDE_DELAY_MS);
         } else {
           hidePullSpinner();
         }
