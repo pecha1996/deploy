@@ -458,7 +458,7 @@
         transform: translateX(-50%) translateY(0) scale(1) rotate(0deg);
       }
       100% {
-        opacity: 0.45;
+        opacity: 0.4;
         transform: translateX(-50%) translateY(0) scale(1) rotate(180deg);
       }
     }
@@ -703,7 +703,7 @@
       const pullOffset = Math.round(IOS_PULL_MAX_OFFSET * value);
       const y = IOS_SPINNER_HIDDEN_Y + Math.round((IOS_SPINNER_VISIBLE_Y - IOS_SPINNER_HIDDEN_Y) * value);
       const scale = 0.82 + 0.18 * value;
-      const alpha = 0.06 + 0.94 * value;
+      const alpha = 1;
       const rotation = IOS_SPINNER_BASE_ROTATION;
       spinner.style.opacity = String(alpha);
       spinner.style.transform =
@@ -738,6 +738,7 @@
       spinner.classList.remove('spinning');
       if (pullSpinnerPhaseTimer) window.clearTimeout(pullSpinnerPhaseTimer);
       pullSpinnerPhaseTimer = window.setTimeout(() => {
+        spinner.style.opacity = '1';
         spinner.classList.add('spinning');
       }, 420);
       if (bodyEl) {
