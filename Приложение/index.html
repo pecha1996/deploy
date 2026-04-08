@@ -439,14 +439,14 @@
       animation: pull-spinner-glow 1.55s linear infinite;
     }
 
-    #pull-spinner.loading .tick:nth-child(1) { animation-delay: -0.3875s; }
-    #pull-spinner.loading .tick:nth-child(2) { animation-delay: -0.58125s; }
-    #pull-spinner.loading .tick:nth-child(3) { animation-delay: -0.775s; }
-    #pull-spinner.loading .tick:nth-child(4) { animation-delay: -0.96875s; }
-    #pull-spinner.loading .tick:nth-child(5) { animation-delay: -1.1625s; }
-    #pull-spinner.loading .tick:nth-child(6) { animation-delay: -1.35625s; }
-    #pull-spinner.loading .tick:nth-child(7) { animation-delay: 0s; }
-    #pull-spinner.loading .tick:nth-child(8) { animation-delay: -0.19375s; }
+    #pull-spinner.loading .tick:nth-child(1) { animation-delay: 0s; }
+    #pull-spinner.loading .tick:nth-child(2) { animation-delay: -0.19375s; }
+    #pull-spinner.loading .tick:nth-child(3) { animation-delay: -0.3875s; }
+    #pull-spinner.loading .tick:nth-child(4) { animation-delay: -0.58125s; }
+    #pull-spinner.loading .tick:nth-child(5) { animation-delay: -0.775s; }
+    #pull-spinner.loading .tick:nth-child(6) { animation-delay: -0.96875s; }
+    #pull-spinner.loading .tick:nth-child(7) { animation-delay: -1.1625s; }
+    #pull-spinner.loading .tick:nth-child(8) { animation-delay: -1.35625s; }
 
     @keyframes pull-spinner-glow {
       0% { opacity: 0.14; }
@@ -533,8 +533,8 @@
     let pullSpinnerTimer;
     let pullSpinnerHideTimer;
     let ignoreTapUntil = 0;
-    const IOS_PULL_MAX_OFFSET = 44;
-    const IOS_PULL_LOADING_OFFSET = 30;
+    const IOS_PULL_MAX_OFFSET = 58;
+    const IOS_PULL_LOADING_OFFSET = 42;
     const IOS_SPINNER_HIDDEN_Y = -26;
     const IOS_SPINNER_VISIBLE_Y = 0;
 
@@ -682,7 +682,7 @@
       const y = IOS_SPINNER_HIDDEN_Y + Math.round((IOS_SPINNER_VISIBLE_Y - IOS_SPINNER_HIDDEN_Y) * value);
       const scale = 0.82 + 0.18 * value;
       const alpha = 0.06 + 0.94 * value;
-      const rotation = Math.round(value * -220);
+      const rotation = Math.round(value * 220);
       spinner.style.opacity = String(alpha);
       spinner.style.transform =
         'translateX(-50%) translateY(' + y + 'px) scale(' + scale + ') rotate(' + rotation + 'deg)';
@@ -735,7 +735,7 @@
         'transform 0.34s cubic-bezier(0.22, 0.7, 0.2, 1), opacity 0.34s ease';
       spinner.style.opacity = '0';
       spinner.style.transform =
-        'translateX(-50%) translateY(' + IOS_SPINNER_HIDDEN_Y + 'px) scale(0.72) rotate(-130deg)';
+        'translateX(-50%) translateY(' + IOS_SPINNER_HIDDEN_Y + 'px) scale(0.72) rotate(130deg)';
       pullSpinnerHideTimer = window.setTimeout(() => {
         spinner.style.transition = '';
       }, 340);
@@ -749,8 +749,8 @@
       const spinner = document.getElementById('pull-spinner');
       if (!spinner || !headerEl) return;
       const headerBottom = headerEl.getBoundingClientRect().bottom;
-      const extraOffset = Math.round(Math.max(0, Math.min(1, progress || 0)) * 20);
-      spinner.style.top = Math.round(headerBottom + 23 + extraOffset) + 'px';
+      const extraOffset = Math.round(Math.max(0, Math.min(1, progress || 0)) * 28);
+      spinner.style.top = Math.round(headerBottom + 32 + extraOffset) + 'px';
     }
 
     function resizeImageDataUrl(dataUrl, size) {
