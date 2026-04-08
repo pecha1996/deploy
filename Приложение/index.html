@@ -430,7 +430,7 @@
 
     #pull-spinner.loading {
       opacity: 1;
-      transform: translateX(-50%) translateY(0) scale(1) rotate(0deg);
+      transform: translateX(-50%) translateY(0) scale(1) rotate(-90deg);
       animation: pull-spinner-intro 0.7s ease forwards;
     }
 
@@ -443,23 +443,23 @@
       animation: pull-spinner-glow 1.2s linear infinite;
     }
 
-    #pull-spinner.loading.spinning .tick:nth-child(5) { animation-delay: 0s; }
-    #pull-spinner.loading.spinning .tick:nth-child(6) { animation-delay: -0.125s; }
-    #pull-spinner.loading.spinning .tick:nth-child(7) { animation-delay: -0.25s; }
-    #pull-spinner.loading.spinning .tick:nth-child(8) { animation-delay: -0.375s; }
-    #pull-spinner.loading.spinning .tick:nth-child(1) { animation-delay: -0.5s; }
-    #pull-spinner.loading.spinning .tick:nth-child(2) { animation-delay: -0.625s; }
-    #pull-spinner.loading.spinning .tick:nth-child(3) { animation-delay: -0.75s; }
-    #pull-spinner.loading.spinning .tick:nth-child(4) { animation-delay: -0.875s; }
+    #pull-spinner.loading.spinning .tick:nth-child(3) { animation-delay: 0s; }
+    #pull-spinner.loading.spinning .tick:nth-child(4) { animation-delay: -0.125s; }
+    #pull-spinner.loading.spinning .tick:nth-child(5) { animation-delay: -0.25s; }
+    #pull-spinner.loading.spinning .tick:nth-child(6) { animation-delay: -0.375s; }
+    #pull-spinner.loading.spinning .tick:nth-child(7) { animation-delay: -0.5s; }
+    #pull-spinner.loading.spinning .tick:nth-child(8) { animation-delay: -0.625s; }
+    #pull-spinner.loading.spinning .tick:nth-child(1) { animation-delay: -0.75s; }
+    #pull-spinner.loading.spinning .tick:nth-child(2) { animation-delay: -0.875s; }
 
     @keyframes pull-spinner-intro {
       0% {
         opacity: 1;
-        transform: translateX(-50%) translateY(0) scale(1) rotate(0deg);
+        transform: translateX(-50%) translateY(0) scale(1) rotate(-90deg);
       }
       100% {
         opacity: 0.4;
-        transform: translateX(-50%) translateY(0) scale(1) rotate(90deg);
+        transform: translateX(-50%) translateY(0) scale(1) rotate(0deg);
       }
     }
 
@@ -554,7 +554,7 @@
     const PULL_SPINNER_AFTER = Math.round(PULL_SPINNER_SIZE * 2.5);
     const IOS_PULL_MAX_OFFSET = PULL_SPINNER_BEFORE + PULL_SPINNER_AFTER;
     const IOS_PULL_LOADING_OFFSET = PULL_SPINNER_AFTER;
-    const IOS_SPINNER_BASE_ROTATION = 0;
+    const IOS_SPINNER_BASE_ROTATION = -90;
     const IOS_SPINNER_HIDDEN_Y = -26;
     const IOS_SPINNER_VISIBLE_Y = 0;
     const PULL_SPINNER_INTRO_MS = 700;
